@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: timekeeper
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: RooT!@123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+      - "${DEBUG_PORT}:${DEBUG_PORT}"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+
+volumes:
+  pgdata:
