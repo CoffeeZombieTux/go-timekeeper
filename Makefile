@@ -1,7 +1,19 @@
 # === CONFIG ===
+
+ifneq (,$(wildcard .env))
+	include .env
+	export
+endif
+
 MIGRATIONS_DIR = migrations
-DB_URL = postgres://user:password@localhost:5432/timekeeper?sslmode=disable
-TEST_DB_URL = postgres://user:password@localhost:5432/timekeeper_test?sslmode=disable
+DB_HOST_LOCAL = localhost
+DB_SSL_MODE ?= disable
+TEST_DB_PORT ?= 5433
+TEST_DB_NAME ?= $(DB_NAME)_test
+
+DB_URL = postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST_LOCAL):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSL_MODE)
+TEST_DB_URL = postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST_LOCAL):$(TEST_DB_PORT)/$(TEST_DB_NAME)?sslmode=$(DB_SSL_MODE)
+
 
 # === TEST MIGRATIONS ===
 migrate-test-up:

@@ -4,10 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-timekeeper/internal/auth"
 	"go-timekeeper/internal/config"
+	"go-timekeeper/internal/cron"
 	"go-timekeeper/internal/database"
+	"go-timekeeper/internal/handler"
 	"go-timekeeper/internal/logger"
+	"go-timekeeper/internal/repository"
 	"go-timekeeper/internal/router"
+	"go-timekeeper/internal/service"
 	"net/http"
 	"os"
 	"os/signal"
@@ -46,9 +51,20 @@ func New() (*Kernel, error) {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
 
+	// Repositories
+	userRepo := repository.NewUserRepository(db.DB, log)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(db.DB, log)
+
+	// Services
+	tokenManager := auth.NewTokenManager(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTLMinutes, cfg.Auth.RefreshTokenTTLHours)
+	userService := service.NewUserService(userRepo, tokenManager, refreshTokenRepo)
+
+	// Handlers
+	handlersPool := handler.NewHandlersPool(userService, log)
+
 	// Gin router and HTTP server setup
 	routerEngine := gin.Default()
-	router.SetupRoutes(routerEngine, cfg, log)
+	router.SetupRoutes(routerEngine, handlersPool, tokenManager, log)
 
 	port := strconv.Itoa(cfg.Server.Port)
 	httpServer := &http.Server{
@@ -56,12 +72,15 @@ func New() (*Kernel, error) {
 		Handler: routerEngine,
 	}
 
+	c := cron.InitCrons(log, cfg, userService)
+
 	kernel := &Kernel{
 		Config:       cfg,
 		Logger:       log,
 		DBConnection: db,
 		Router:       routerEngine,
 		HTTPServer:   httpServer,
+		Cron:         c,
 	}
 
 	log.Info("Kernel initialized successfully")

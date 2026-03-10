@@ -12,6 +12,7 @@ type Config struct {
 	Logger   LoggerConfig
 	Server   ServerConfig
 	Auth     AuthConfig
+	Cron     CronConfig
 }
 
 // DatabaseConfig represents the database configuration
@@ -36,10 +37,17 @@ type ServerConfig struct {
 	Host string
 }
 
-// AuthConfig represents API authentication tokens for route groups.
+// AuthConfig represents the authentication configuration
 type AuthConfig struct {
-	AdminToken  string
-	PublicToken string
+	JWTSecret             string
+	AccessTokenTTLMinutes int
+	RefreshTokenTTLHours  int
+}
+
+// CronConfig represents the cron configuration
+type CronConfig struct {
+	CronCleanupRevokedTokensSpec         string
+	CronCleanupRevokedTokensIntervalDays int
 }
 
 // Load loads the application configuration from environment variables
@@ -50,7 +58,7 @@ func Load() (*Config, error) {
 			Port:     getEnvInt("DB_PORT", 5432),
 			User:     getEnv("DB_USER", "postgres"),
 			Password: getEnv("DB_PASSWORD", ""),
-			DBName:   getEnv("DB_NAME", "inventory_reservations"),
+			DBName:   getEnv("DB_NAME", "timekeeper"),
 			SSLMode:  getEnv("DB_SSL_MODE", "disable"),
 		},
 		Logger: LoggerConfig{
@@ -62,11 +70,15 @@ func Load() (*Config, error) {
 			Host: getEnv("SERVER_HOST", "0.0.0.0"),
 		},
 		Auth: AuthConfig{
-			AdminToken:  getEnv("ADMIN_API_TOKEN", ""),
-			PublicToken: getEnv("PUBLIC_API_TOKEN", ""),
+			JWTSecret:             getEnv("JWT_SECRET", "super-secret-change-me"),
+			AccessTokenTTLMinutes: getEnvInt("ACCESS_TOKEN_TTL_MINUTES", 15),
+			RefreshTokenTTLHours:  getEnvInt("REFRESH_TOKEN_TTL_HOURS", 24*7),
+		},
+		Cron: CronConfig{
+			CronCleanupRevokedTokensSpec:         getEnv("CRON_CLEANUP_REVOKED_TOKENS_SPEC", "@every 12h"),
+			CronCleanupRevokedTokensIntervalDays: getEnvInt("CRON_CLEANUP_REVOKED_TOKENS_INTERVAL_DAYS", 7),
 		},
 	}
-
 	return config, nil
 }
 

@@ -81,11 +81,13 @@ func HTTPLogging(log *logger.Logger) gin.HandlerFunc {
 	}
 }
 
+// bodyCaptureWriter captures the response body for logging.
 type bodyCaptureWriter struct {
 	gin.ResponseWriter
 	body *bytes.Buffer
 }
 
+// Write captures the response body bytes.
 func (w *bodyCaptureWriter) Write(b []byte) (int, error) {
 	if _, err := w.body.Write(b); err != nil {
 		return 0, err
@@ -93,6 +95,7 @@ func (w *bodyCaptureWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+// WriteString captures the response body string.
 func (w *bodyCaptureWriter) WriteString(s string) (int, error) {
 	if _, err := w.body.WriteString(s); err != nil {
 		return 0, err
@@ -100,6 +103,7 @@ func (w *bodyCaptureWriter) WriteString(s string) (int, error) {
 	return w.ResponseWriter.WriteString(s)
 }
 
+// readAndRestoreRequestBody reads the request body and restores it after use.
 func readAndRestoreRequestBody(req *http.Request) ([]byte, error) {
 	if req == nil || req.Body == nil {
 		return nil, nil
@@ -118,6 +122,7 @@ func readAndRestoreRequestBody(req *http.Request) ([]byte, error) {
 	return payload, nil
 }
 
+// normalizeBodyForLog returns a string representation of the body, truncated if necessary.
 func normalizeBodyForLog(contentType string, body []byte) (string, bool) {
 	if len(body) == 0 {
 		return "", false
@@ -135,6 +140,7 @@ func normalizeBodyForLog(contentType string, body []byte) (string, bool) {
 	return raw[:maxLoggedBodyBytes], true
 }
 
+// isTextLikeContentType returns true if the content type is text-like.
 func isTextLikeContentType(contentType string) bool {
 	ct := strings.ToLower(strings.TrimSpace(contentType))
 	if ct == "" {
@@ -147,6 +153,7 @@ func isTextLikeContentType(contentType string) bool {
 		strings.HasPrefix(ct, "text/")
 }
 
+// buildRequestLogFields builds the log fields for a request.
 func buildRequestLogFields(ctx *gin.Context) logger.Fields {
 	fields := logger.Fields{
 		"method":     ctx.Request.Method,
@@ -165,21 +172,6 @@ func buildRequestLogFields(ctx *gin.Context) logger.Fields {
 		}
 
 		fields["param_"+key] = value
-
-		switch key {
-		case "id":
-			fields["object_id"] = value
-		case "sku":
-			fields["sku"] = value
-		case "quote_id":
-			fields["quote_id"] = value
-		case "order_id":
-			fields["order_id"] = value
-		}
-
-		if strings.Contains(key, "reservation") && strings.Contains(key, "id") {
-			fields["reservation_id"] = value
-		}
 	}
 
 	return fields
