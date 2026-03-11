@@ -86,9 +86,6 @@ func (userService *UserService) RefreshToken(
 	ctx context.Context,
 	req apimodel.RefreshRequest,
 ) (*apimodel.AuthResponse, error) {
-	if err := req.ValidateRefreshTokenRequest(); err != nil {
-		return nil, err
-	}
 	oldHash := auth.HashRefreshToken(req.RefreshToken)
 	stored, err := userService.tokenRepo.GetValidByHash(ctx, oldHash)
 	if err != nil {
@@ -108,9 +105,6 @@ func (userService *UserService) RefreshToken(
 
 // Logout process user logout.
 func (userService *UserService) Logout(ctx context.Context, req apimodel.RefreshRequest) error {
-	if err := req.ValidateRefreshTokenRequest(); err != nil {
-		return err
-	}
 	if err := userService.tokenRepo.RevokeByHash(ctx, auth.HashRefreshToken(req.RefreshToken)); err != nil {
 		return err
 	}

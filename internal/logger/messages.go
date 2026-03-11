@@ -16,4 +16,8 @@ const (
 	LogMessageFailedToGetUser                 = "failed_to_get_user"
 	LogMessageFailedToDeleteUser              = "failed_to_delete_user"
 	LogMessageFailedToRefreshUserToken        = "failed_to_refresh_user_token"
+	LogMessageFailedToCreateProject           = "failed_to_create_project"
+	LogMessageFailedToUpdateProject           = "failed_to_update_project"
+	LogMessageFailedToDeleteProject           = "failed_to_delete_project"
+	LogMessageFailedToGetProject              = "failed_to_get_project"
 )

@@ -1,6 +1,8 @@
 package api_model
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 // AuthResponse represents the response body for authentication.
 type AuthResponse struct {

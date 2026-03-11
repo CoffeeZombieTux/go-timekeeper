@@ -3,13 +3,13 @@ POST {{host}}/api/auth/register
 Content-Type: application/json
 
 {
-  "email": "{{user1_email}}",
-  "password": "{{user1_password}}"
+  "email": "{{user_email}}",
+  "password": "{{user_password}}"
 }
 
 > {%
-    client.global.set("user1_access_token", response.body.data.accessToken);
-    client.global.set("user1_refresh_token", response.body.data.refreshToken);
+    client.global.set("user_access_token", response.body.data.accessToken);
+    client.global.set("user_refresh_token", response.body.data.refreshToken);
 %}
 
 ### Log in
@@ -17,65 +17,66 @@ POST {{host}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "{{user1_email}}",
-  "password": "{{user1_password}}"
+  "email": "{{user_email}}",
+  "password": "{{user_password}}"
 }
 
 > {%
-    client.global.set("user1_access_token", response.body.data.accessToken);
-    client.global.set("user1_refresh_token", response.body.data.refreshToken);
+    client.global.set("user_access_token", response.body.data.accessToken);
+    client.global.set("user_refresh_token", response.body.data.refreshToken);
 %}
 
 ### Log out
 POST {{host}}/api/auth/logout
 Content-Type: application/json
-Authorization: Bearer {{user1_access_token}}
+Authorization: Bearer {{user_access_token}}
 
 {
-  "refreshToken": "{{user1_refresh_token}}"
+  "refreshToken": "{{user_refresh_token}}"
 }
 
 > {%
-    client.global.set("user1_access_token", "");
-    client.global.set("user1_refresh_token", "");
+    client.global.set("user_access_token", "");
+    client.global.set("user_refresh_token", "");
 %}
 
 ### Refresh
 POST {{host}}/api/auth/refresh
 Content-Type: application/json
-Authorization: Bearer {{user1_access_token}}
+Authorization: Bearer {{user_access_token}}
 
 {
-  "refreshToken": "{{user1_refresh_token}}"
+  "refreshToken": "{{user_refresh_token}}"
 }
 
 > {%
-    client.global.set("user1_access_token", response.body.data.accessToken);
-    client.global.set("user1_refresh_token", response.body.data.refreshToken);
+    client.global.set("user_access_token", response.body.data.accessToken);
+    client.global.set("user_refresh_token", response.body.data.refreshToken);
 %}
 
 ### GET user
 GET {{host}}/api/user/me
 Content-Type: application/json
-Authorization: Bearer {{user1_access_token}}
+Authorization: Bearer {{user_access_token}}
 
 ### Change password
 POST {{host}}/api/auth/change-password
 Content-Type: application/json
-Authorization: Bearer {{user1_access_token}}
+Authorization: Bearer {{user_access_token}}
 
 {
-  "currentPassword": "{{user1_password}}",
-  "newPassword": "{{user1_new_password}}"
+  "currentPassword": "{{user_password}}",
+  "newPassword": "NewP@ssw0rd"
 }
 
 > {%
-    client.global.set("user1_access_token", response.body.data.accessToken);
-    client.global.set("user1_refresh_token", response.body.data.refreshToken);
+    client.global.set("user_access_token", response.body.data.accessToken);
+    client.global.set("user_password", "NewP@ssw0rd")
+    client.global.set("user_refresh_token", response.body.data.refreshToken);
 %}
 
 ### Delete user
 DELETE {{host}}/api/user/me
 Content-Type: application/json
-Authorization: Bearer {{user1_access_token}}
+Authorization: Bearer {{user_access_token}}
 

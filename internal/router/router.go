@@ -29,4 +29,5 @@ func SetupRoutes(
 	setupAppHealthRoutes(engine)
 	setupUserRoutes(engine, handlersPool, tokenManager)
 	setupAuthRoutes(engine, handlersPool, tokenManager)
+	setupProjectRoutes(engine, handlersPool, tokenManager)
 }

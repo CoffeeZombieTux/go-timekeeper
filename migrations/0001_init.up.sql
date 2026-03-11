@@ -20,3 +20,13 @@ CREATE TABLE IF NOT EXISTS refresh_token (
 
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_token(user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_token(expires_at);
+
+CREATE TABLE IF NOT EXISTS project (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (user_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_projects_user_id ON project(user_id);

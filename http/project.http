@@ -1,0 +1,61 @@
+### Create project 1
+POST {{host}}/api/project
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "name": "{{user_project1_name}}"
+}
+
+> {%
+    client.global.set("user_project1_name", response.body.data.name);
+    client.global.set("user_project1_id", response.body.data.id);
+%}
+
+### Get project
+GET {{host}}/api/project/{{user_project1_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Rename project
+PATCH {{host}}/api/project
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "id": {{user_project1_id}},
+  "name": "User1 project1 RENAMED4"
+}
+
+> {%
+    client.global.set("user_project1_name", response.body.data.name);
+%}
+
+### Create project 2
+POST {{host}}/api/project
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "name": "{{user_project2_name}}"
+}
+
+> {%
+    client.global.set("user_project2_name", response.body.data.name);
+    client.global.set("user_project2_id", response.body.data.id);
+%}
+
+### Get user projects
+GET {{host}}/api/project/list
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Delete project
+DELETE {{host}}/api/project/{{user_project2_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Get project
+GET {{host}}/api/project/{{user_project2_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
