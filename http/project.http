@@ -23,8 +23,8 @@ Content-Type: application/json
 Authorization: Bearer {{user_access_token}}
 
 {
-  "id": {{user_project1_id}},
-  "name": "User1 project1 RENAMED4"
+  "id": "{{user_project1_id}}",
+  "name": "User1 project1 RENAMED"
 }
 
 > {%

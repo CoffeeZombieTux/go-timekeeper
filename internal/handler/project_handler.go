@@ -7,9 +7,9 @@ import (
 	apimodel "go-timekeeper/internal/model/api"
 	"go-timekeeper/internal/service"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // ProjectHandler handles project-related requests.
@@ -47,10 +47,9 @@ func (projectHandler *ProjectHandler) CreateProject(ctx *gin.Context) {
 
 // GetProject handles project retrieval requests.
 func (projectHandler *ProjectHandler) GetProject(ctx *gin.Context) {
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
-		writeBindError(ctx, errors.New("missing or invalid ID in request"))
-		return
+		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
 	}
 	response, err := projectHandler.projectService.Get(ctx.Request.Context(), id)
 	if err != nil {
@@ -107,9 +106,9 @@ func (projectHandler *ProjectHandler) UpdateProject(ctx *gin.Context) {
 
 // DeleteProject handles project deletion requests.
 func (projectHandler *ProjectHandler) DeleteProject(ctx *gin.Context) {
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
-		writeBindError(ctx, errors.New("missing or invalid ID in request"))
+		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
 	}
 	err = projectHandler.projectService.Delete(ctx.Request.Context(), id)
 	if err != nil {

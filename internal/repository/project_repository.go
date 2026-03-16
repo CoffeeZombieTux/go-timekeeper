@@ -12,7 +12,7 @@ import (
 // ProjectRepositoryInterface represents a project repository.
 type ProjectRepositoryInterface interface {
 	Save(ctx context.Context, project *model.Project) (*model.Project, error)
-	Get(ctx context.Context, id int64) (*model.Project, error)
+	Get(ctx context.Context, id uuid.UUID) (*model.Project, error)
 	GetUserProjects(ctx context.Context, userID uuid.UUID) ([]*model.Project, error)
 	Delete(ctx context.Context, project *model.Project) error
 }
@@ -33,7 +33,7 @@ func NewProjectRepository(db *sql.DB, logger *logger.Logger) ProjectRepositoryIn
 
 // Save saves a project to the database.
 func (projectRepo ProjectRepository) Save(ctx context.Context, project *model.Project) (*model.Project, error) {
-	if project.ID != 0 {
+	if project.ID != uuid.Nil {
 		query := `
 			UPDATE project
 			SET name = $1,
@@ -72,7 +72,7 @@ func (projectRepo ProjectRepository) Save(ctx context.Context, project *model.Pr
 }
 
 // Get gets a project by ID.
-func (projectRepo ProjectRepository) Get(ctx context.Context, id int64) (*model.Project, error) {
+func (projectRepo ProjectRepository) Get(ctx context.Context, id uuid.UUID) (*model.Project, error) {
 	query := `SELECT * FROM project WHERE id = $1`
 	var project model.Project
 	err := projectRepo.db.QueryRowContext(

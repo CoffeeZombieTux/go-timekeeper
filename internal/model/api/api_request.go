@@ -2,6 +2,8 @@ package api_model
 
 import (
 	"go-timekeeper/internal/validator"
+
+	"github.com/google/uuid"
 )
 
 // RegisterRequest represents the request body for user registration.
@@ -56,6 +58,55 @@ type CreateProjectRequest struct {
 
 // UpdateProjectRequest represents the request body for updating a project.
 type UpdateProjectRequest struct {
-	ID   int64  `json:"id" binding:"required"`
-	Name string `json:"name" binding:"required"`
+	ID   uuid.UUID `json:"id" binding:"required"`
+	Name string    `json:"name" binding:"required"`
+}
+
+// CreateTaskRequest represents the request body for creating a new task.
+type CreateTaskRequest struct {
+	ProjectID uuid.UUID `json:"projectID" binding:"required"`
+	Name      string    `json:"name" binding:"required"`
+}
+
+// UpdateTaskRequest represents the request body for updating a task.
+type UpdateTaskRequest struct {
+	ID        uuid.UUID `json:"id" binding:"required"`
+	ProjectID uuid.UUID `json:"projectID" binding:"required"`
+	Name      string    `json:"name" binding:"required"`
+}
+
+// PaginationParams represents pagination parameters for a request
+type PaginationParams struct {
+	Limit  int
+	Offset int
+}
+
+// NewPaginationParams creates a new PaginationParams instance
+func NewPaginationParams(requestedLimit, requestedOffset int) PaginationParams {
+	const (
+		DefaultLimit = 50
+		MaxLimit     = 10000
+		MinLimit     = 1
+	)
+
+	// Apply constraints to the limit
+	limit := DefaultLimit
+	if requestedLimit >= MinLimit {
+		limit = requestedLimit
+		if limit > MaxLimit {
+			// Silent Adjustment
+			limit = MaxLimit
+		}
+	}
+
+	// Ensure the offset is not negative
+	offset := 0
+	if requestedOffset > 0 {
+		offset = requestedOffset
+	}
+
+	return PaginationParams{
+		Limit:  limit,
+		Offset: offset,
+	}
 }

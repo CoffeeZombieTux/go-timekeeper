@@ -9,6 +9,8 @@ import (
 	apimodel "go-timekeeper/internal/model/api"
 	"go-timekeeper/internal/repository"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 // UserServiceInterface represents a user service.
@@ -113,10 +115,11 @@ func (userService *UserService) Logout(ctx context.Context, req apimodel.Refresh
 
 // Me returns the current user's information.'
 func (userService *UserService) Me(ctx context.Context) (*apimodel.UserPayload, error) {
-	userId, ok := middleware.UserIDFromContext(ctx)
-	if !ok {
-		return nil, apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+	userId, err := getUserIdFromRequest(ctx)
+	if err != nil {
+		return nil, err
 	}
+
 	user, err := userService.userRepo.GetById(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -131,9 +134,9 @@ func (userService *UserService) Me(ctx context.Context) (*apimodel.UserPayload, 
 
 // ChangePassword process changing the user's password.'
 func (userService *UserService) ChangePassword(ctx context.Context, req apimodel.ChangePasswordRequest) error {
-	userId, ok := middleware.UserIDFromContext(ctx)
-	if !ok {
-		return apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+	userId, err := getUserIdFromRequest(ctx)
+	if err != nil {
+		return err
 	}
 	if err := req.ValidateChangePasswordRequest(); err != nil {
 		return err
@@ -158,9 +161,9 @@ func (userService *UserService) ChangePassword(ctx context.Context, req apimodel
 
 // DeleteMe process current user delete.
 func (userService *UserService) DeleteMe(ctx context.Context) error {
-	userId, ok := middleware.UserIDFromContext(ctx)
-	if !ok {
-		return apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+	userId, err := getUserIdFromRequest(ctx)
+	if err != nil {
+		return err
 	}
 	return userService.userRepo.Delete(ctx, &model.User{ID: userId})
 }
@@ -196,4 +199,12 @@ func (userService *UserService) loginUser(ctx context.Context, user *model.User)
 			UpdatedAt: user.UpdatedAt.UTC().Format(http.TimeFormat),
 		},
 	}, nil
+}
+
+func getUserIdFromRequest(ctx context.Context) (uuid.UUID, error) {
+	userId, ok := middleware.UserIDFromContext(ctx)
+	if !ok {
+		return uuid.Nil, apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+	}
+	return userId, nil
 }

@@ -9,16 +9,19 @@ import (
 type HandlersPool struct {
 	User    *UserHandler
 	Project *ProjectHandler
+	Task    *TaskHandler
 }
 
 // NewHandlersPool creates a new HandlersPool instance
 func NewHandlersPool(
 	userService service.UserServiceInterface,
 	projectService service.ProjectServiceInterface,
+	taskService service.TaskServiceInterface,
 	logger *logger.Logger,
 ) *HandlersPool {
 	return &HandlersPool{
 		User:    NewUserHandler(userService, logger),
 		Project: NewProjectHandler(projectService, logger),
+		Task:    NewTaskHandler(taskService, logger),
 	}
 }

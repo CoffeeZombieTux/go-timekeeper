@@ -4,8 +4,6 @@ import (
 	"context"
 	"go-timekeeper/internal/apperror"
 	"go-timekeeper/internal/auth"
-	"log"
-
 	"net/http"
 	"strings"
 
@@ -69,7 +67,6 @@ func AuthMiddleware(tm auth.TokenManagerInterface) gin.HandlerFunc {
 		}
 
 		userID, _, err := tm.ParseAccessToken(providedToken)
-		log.Printf("token parsed successfully: userID=%s", userID.String())
 
 		if err != nil {
 			ctx.AbortWithStatusJSON(

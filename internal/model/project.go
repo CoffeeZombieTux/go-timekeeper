@@ -8,7 +8,7 @@ import (
 
 // Project represents a project entity in the database.
 type Project struct {
-	ID        int64     `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	UserID    uuid.UUID `json:"user_id"`
 	CreatedAt time.Time `json:"createdAt"`

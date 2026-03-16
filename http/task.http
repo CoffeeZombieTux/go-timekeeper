@@ -1,0 +1,138 @@
+### Create task 1
+POST {{host}}/api/task
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "name": "{{user_task1_name}}",
+  "projectID": "{{user_project1_id}}"
+}
+
+> {%
+    client.global.set("user_task1_name", response.body.data.name);
+    client.global.set("user_task1_id", response.body.data.id);
+%}
+
+### Update task 1
+PATCH {{host}}/api/task
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "id": "{{user_task1_id}}",
+  "name": "User1 task1 RENAMED",
+  "projectID": "{{user_project1_id}}"
+}
+
+### Get task 1
+GET {{host}}/api/task/{{user_task1_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+
+### Create task 2
+POST {{host}}/api/task
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "name": "{{user_task2_name}}",
+  "projectID": "{{user_project1_id}}"
+}
+
+> {%
+    client.global.set("user_task2_name", response.body.data.name);
+    client.global.set("user_task2_id", response.body.data.id);
+%}
+
+### Create task 3
+POST {{host}}/api/task
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "name": "{{user_task3_name}}",
+  "projectID": "{{user_project1_id}}"
+}
+
+> {%
+    client.global.set("user_task3_name", response.body.data.name);
+    client.global.set("user_task3_id", response.body.data.id);
+%}
+
+
+### Create task 4
+POST {{host}}/api/task
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "name": "{{user_task4_name}}",
+  "projectID": "{{user_project1_id}}"
+}
+
+> {%
+    client.global.set("user_task4_name", response.body.data.name);
+    client.global.set("user_task4_id", response.body.data.id);
+%}
+
+### List project tasks
+GET {{host}}/api/task/list/project/{{user_project1_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Update task 2
+PATCH {{host}}/api/task
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "id": "{{user_task2_id}}",
+  "name": "{{user_task2_name}}",
+  "projectID": "{{user_project2_id}}"
+}
+
+### List project tasks
+GET {{host}}/api/task/list/project/{{user_project2_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Delete task 2
+DELETE {{host}}/api/task/{{user_task2_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Start task 3
+PATCH {{host}}/api/task/{{user_task3_id}}/start
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Get task 3
+GET {{host}}/api/task/{{user_task3_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Stop task 3
+PATCH {{host}}/api/task/{{user_task3_id}}/stop
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Get task 1
+GET {{host}}/api/task/{{user_task3_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Close task 3
+PATCH {{host}}/api/task/{{user_task3_id}}/close
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### Get task 1
+GET {{host}}/api/task/{{user_task3_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+### List project tasks
+GET {{host}}/api/task/list/project/{{user_project1_id}}?isActive=1&limit=2&offset=0
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}

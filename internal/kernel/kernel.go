@@ -55,14 +55,16 @@ func New() (*Kernel, error) {
 	userRepo := repository.NewUserRepository(db.DB, log)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db.DB, log)
 	projectRepo := repository.NewProjectRepository(db.DB, log)
+	taskRepo := repository.NewTaskRepository(db.DB, log)
 
 	// Services
 	tokenManager := auth.NewTokenManager(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTLMinutes, cfg.Auth.RefreshTokenTTLHours)
 	userService := service.NewUserService(userRepo, tokenManager, refreshTokenRepo)
 	projectService := service.NewProjectService(projectRepo)
+	taskService := service.NewTaskService(taskRepo)
 
 	// Handlers
-	handlersPool := handler.NewHandlersPool(userService, projectService, log)
+	handlersPool := handler.NewHandlersPool(userService, projectService, taskService, log)
 
 	// Gin router and HTTP server setup
 	routerEngine := gin.Default()

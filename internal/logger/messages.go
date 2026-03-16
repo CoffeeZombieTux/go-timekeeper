@@ -20,4 +20,11 @@ const (
 	LogMessageFailedToUpdateProject           = "failed_to_update_project"
 	LogMessageFailedToDeleteProject           = "failed_to_delete_project"
 	LogMessageFailedToGetProject              = "failed_to_get_project"
+	LogMessageFailedToCreateTask              = "failed_to_create_task"
+	LogMessageFailedToUpdateTask              = "failed_to_update_task"
+	LogMessageFailedToDeleteTask              = "failed_to_delete_task"
+	LogMessageFailedToGetTask                 = "failed_to_get_task"
+	LogMessageFailedToStartTask               = "failed_to_start_task"
+	LogMessageFailedToStopTask                = "failed_to_stop_task"
+	LogMessageFailedToCloseTask               = "failed_to_close_task"
 )
