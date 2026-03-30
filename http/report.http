@@ -1,0 +1,40 @@
+### General Report
+POST {{host}}/api/report/general
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "timeRange":
+  {
+    "fromDate": "2026-03-22T00:00:00+01:00",
+    "toDate": "2026-03-24T23:59:59+01:00"
+  }
+}
+
+### Project Report
+POST {{host}}/api/report/project
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "projectID": "{{user_project1_id}}",
+  "timeRange":
+  {
+    "fromDate": "2026-03-22T00:00:00+01:00",
+    "toDate": "2026-03-24T23:59:59+01:00"
+  }
+}
+
+### Task Report
+POST {{host}}/api/report/task
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "taskID": "{{user_task4_id}}",
+  "timeRange":
+  {
+    "fromDate": "2026-03-22T00:00:00+01:00",
+    "toDate": "2026-03-24T23:59:59+01:00"
+  }
+}

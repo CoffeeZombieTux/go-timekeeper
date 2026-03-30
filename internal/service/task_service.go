@@ -7,6 +7,7 @@ import (
 	"go-timekeeper/internal/model"
 	apimodel "go-timekeeper/internal/model/api"
 	"go-timekeeper/internal/repository"
+	"go-timekeeper/internal/uow"
 
 	"github.com/google/uuid"
 )
@@ -15,7 +16,7 @@ import (
 type TaskServiceInterface interface {
 	Create(ctx context.Context, req *apimodel.CreateTaskRequest) (*model.Task, error)
 	Update(ctx context.Context, req *apimodel.UpdateTaskRequest) (*model.Task, error)
-	Get(ctx context.Context, id uuid.UUID) (*model.Task, error)
+	Get(ctx context.Context, id uuid.UUID, unit *uow.UnitOfWork) (*model.Task, error)
 	GetByProject(
 		ctx context.Context,
 		projectID uuid.UUID,
@@ -24,20 +25,28 @@ type TaskServiceInterface interface {
 		requestedOffset int,
 	) ([]*model.Task, *apimodel.PaginationResponse, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	Start(ctx context.Context, id uuid.UUID) error
+	Start(ctx context.Context, id uuid.UUID, timezone string) error
 	Stop(ctx context.Context, id uuid.UUID) error
 	Close(ctx context.Context, id uuid.UUID) error
 }
 
 // TaskService is a struct that implements the TaskServiceInterface.
 type TaskService struct {
-	taskRepo repository.TaskRepositoryInterface
+	taskRepo          repository.TaskRepositoryInterface
+	timeRecordService TimeRecordServiceInterface
+	uowManager        *uow.UnitOfWorkManager
 }
 
 // NewTaskService creates a new TaskService instance.
-func NewTaskService(taskRepo repository.TaskRepositoryInterface) *TaskService {
+func NewTaskService(
+	taskRepo repository.TaskRepositoryInterface,
+	timeRecordService TimeRecordServiceInterface,
+	uow *uow.UnitOfWorkManager,
+) *TaskService {
 	return &TaskService{
-		taskRepo: taskRepo,
+		taskRepo:          taskRepo,
+		timeRecordService: timeRecordService,
+		uowManager:        uow,
 	}
 }
 
@@ -54,27 +63,36 @@ func (taskService *TaskService) Create(ctx context.Context, req *apimodel.Create
 		Status:    model.DefaultStatus,
 	}
 
-	return taskService.taskRepo.Save(ctx, task)
+	return taskService.taskRepo.Save(ctx, task, nil)
 }
 
 // Update manages a task update process.
 func (taskService *TaskService) Update(ctx context.Context, req *apimodel.UpdateTaskRequest) (*model.Task, error) {
-	task, err := taskService.Get(ctx, req.ID)
+	var task *model.Task
+	err := uow.WithUnitOfWork(ctx, taskService.uowManager, func(unit *uow.UnitOfWork) error {
+		var err error
+		task, err = taskService.Get(ctx, req.ID, unit)
+		if err != nil {
+			return err
+		}
+		task.Name = req.Name
+		task.ProjectID = req.ProjectID
+		task, err = taskService.taskRepo.Save(ctx, task, unit)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
-	task.Name = req.Name
-	task.ProjectID = req.ProjectID
-	return taskService.taskRepo.Save(ctx, task)
+	return task, nil
 }
 
 // Get manages a task get process.
-func (taskService *TaskService) Get(ctx context.Context, id uuid.UUID) (*model.Task, error) {
+func (taskService *TaskService) Get(ctx context.Context, id uuid.UUID, unit *uow.UnitOfWork) (*model.Task, error) {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
-	task, err := taskService.taskRepo.Get(ctx, id)
+	task, err := taskService.taskRepo.Get(ctx, id, unit)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +102,7 @@ func (taskService *TaskService) Get(ctx context.Context, id uuid.UUID) (*model.T
 	return task, nil
 }
 
-// GetByProject manages a task get by project process.
+// GetByProject manages a task get by a project process.
 func (taskService *TaskService) GetByProject(
 	ctx context.Context,
 	projectID uuid.UUID,
@@ -92,7 +110,6 @@ func (taskService *TaskService) GetByProject(
 	requestedLimit,
 	requestedOffset int,
 ) ([]*model.Task, *apimodel.PaginationResponse, error) {
-
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -133,76 +150,94 @@ func (taskService *TaskService) GetByProject(
 
 // Delete manages a task delete process.
 func (taskService *TaskService) Delete(ctx context.Context, id uuid.UUID) error {
-	task, err := taskService.Get(ctx, id)
+	err := uow.WithUnitOfWork(ctx, taskService.uowManager, func(unit *uow.UnitOfWork) error {
+		task, err := taskService.Get(ctx, id, unit)
+		if err != nil {
+			return err
+		}
+		return taskService.taskRepo.Delete(ctx, task, unit)
+	})
 	if err != nil {
 		return err
 	}
-	return taskService.taskRepo.Delete(ctx, task)
+	return nil
 }
 
 // Start manages a task start process.
-func (taskService *TaskService) Start(ctx context.Context, id uuid.UUID) error {
-	const requiredStatus = model.StatusWorkingOn
-	task, err := taskService.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-	if !checkStatusValidator(task.Status, requiredStatus) {
-		return apperror.New(apperror.CodeValidationErrorCode, apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("required status %s is not valid for task %s", requiredStatus, task.ID),
-		)
-	}
+func (taskService *TaskService) Start(ctx context.Context, id uuid.UUID, timezone string) error {
+	err := uow.WithUnitOfWork(ctx, taskService.uowManager, func(unit *uow.UnitOfWork) error {
+		const requiredStatus = model.StatusWorkingOn
+		task, err := taskService.Get(ctx, id, unit)
+		if err != nil {
+			return err
+		}
+		if !checkStatusValidator(task.Status, requiredStatus) {
+			return apperror.New(apperror.CodeValidationErrorCode, apperror.CodeValidationErrorMessage,
+				fmt.Sprintf("required status %s is not valid for task %s", requiredStatus, task.ID),
+			)
+		}
 
-	task.Status = requiredStatus
-	_, err = taskService.taskRepo.Save(ctx, task)
+		task.Status = requiredStatus
+		_, err = taskService.taskRepo.Save(ctx, task, unit)
+		if err != nil {
+			return err
+		}
+		err = taskService.timeRecordService.StartTask(ctx, task, timezone, unit)
+		return err
+	})
 	if err != nil {
 		return err
 	}
-	// TODO: implement time slots things
 	return nil
 }
 
 // Stop manages a task stop process.
 func (taskService *TaskService) Stop(ctx context.Context, id uuid.UUID) error {
-	const requiredStatus = model.StatusCreated
+	err := uow.WithUnitOfWork(ctx, taskService.uowManager, func(unit *uow.UnitOfWork) error {
+		const requiredStatus = model.StatusCreated
 
-	task, err := taskService.Get(ctx, id)
+		task, err := taskService.Get(ctx, id, unit)
+		if err != nil {
+			return err
+		}
+		if !checkStatusValidator(task.Status, requiredStatus) {
+			return apperror.New(apperror.CodeValidationErrorCode, apperror.CodeValidationErrorMessage,
+				fmt.Sprintf("required status %s is not valid for task %s", requiredStatus, task.ID),
+			)
+		}
+		task.Status = requiredStatus
+		_, err = taskService.taskRepo.Save(ctx, task, unit)
+		if err != nil {
+			return err
+		}
+		err = taskService.timeRecordService.StopTask(ctx, task, unit)
+		return err
+	})
 	if err != nil {
 		return err
 	}
-	if !checkStatusValidator(task.Status, requiredStatus) {
-		return apperror.New(apperror.CodeValidationErrorCode, apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("required status %s is not valid for task %s", requiredStatus, task.ID),
-		)
-	}
-	task.Status = requiredStatus
-	_, err = taskService.taskRepo.Save(ctx, task)
-	if err != nil {
-		return err
-	}
-	// TODO: implement time slots things
 	return nil
 }
 
 // Close manages a task close process.
 func (taskService *TaskService) Close(ctx context.Context, id uuid.UUID) error {
-	const requiredStatus = model.StatusClosed
-	task, err := taskService.Get(ctx, id)
-	if err != nil {
+	err := uow.WithUnitOfWork(ctx, taskService.uowManager, func(unit *uow.UnitOfWork) error {
+
+		const requiredStatus = model.StatusClosed
+		task, err := taskService.Get(ctx, id, unit)
+		if err != nil {
+			return err
+		}
+		if !checkStatusValidator(task.Status, requiredStatus) {
+			return apperror.New(apperror.CodeValidationErrorCode, apperror.CodeValidationErrorMessage,
+				fmt.Sprintf("required status %s is not valid for task %s", requiredStatus, task.ID),
+			)
+		}
+		task.Status = requiredStatus
+		_, err = taskService.taskRepo.Save(ctx, task, unit)
 		return err
-	}
-	if !checkStatusValidator(task.Status, requiredStatus) {
-		return apperror.New(apperror.CodeValidationErrorCode, apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("required status %s is not valid for task %s", requiredStatus, task.ID),
-		)
-	}
-	task.Status = requiredStatus
-	_, err = taskService.taskRepo.Save(ctx, task)
-	if err != nil {
-		return err
-	}
-	// TODO: implement time slots things
-	return nil
+	})
+	return err
 }
 
 // checkUserAccess checks if the user is allowed to access the task.

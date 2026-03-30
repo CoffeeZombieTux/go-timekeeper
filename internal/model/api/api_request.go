@@ -1,7 +1,10 @@
 package api_model
 
 import (
+	"fmt"
+	"go-timekeeper/internal/apperror"
 	"go-timekeeper/internal/validator"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -109,4 +112,45 @@ func NewPaginationParams(requestedLimit, requestedOffset int) PaginationParams {
 		Limit:  limit,
 		Offset: offset,
 	}
+}
+
+// TimeRangeParams represents the time range parameters for a request
+type TimeRangeParams struct {
+	FromDate time.Time `json:"fromDate" binding:"required"`
+	ToDate   time.Time `json:"toDate" binding:"required"`
+}
+
+// ValidateTimeRangeParams validates the TimeRangeParams.
+func (input *TimeRangeParams) ValidateTimeRangeParams() error {
+	if input.ToDate.Before(input.FromDate) {
+		return apperror.New(
+			apperror.CodeValidationErrorCode,
+			apperror.CodeValidationErrorMessage,
+			fmt.Sprintf(
+				"stop time should be after start. Started at: %sm stop at: %s",
+				input.ToDate,
+				input.FromDate,
+			),
+		)
+	}
+	return nil
+}
+
+// GeneralReportRequest represents the request body for generating a report
+type GeneralReportRequest struct {
+	Projects  *[]uuid.UUID     `json:"projects"`
+	TimeRange *TimeRangeParams `json:"timeRange" binding:"required"`
+}
+
+// ProjectReportRequest represents the request body for generating a report
+type ProjectReportRequest struct {
+	ProjectID uuid.UUID        `json:"projectID" binding:"required"`
+	Tasks     *[]uuid.UUID     `json:"tasks"`
+	TimeRange *TimeRangeParams `json:"timeRange" binding:"required"`
+}
+
+// TaskReportRequest represents the request body for generating a report
+type TaskReportRequest struct {
+	TaskID    uuid.UUID        `json:"taskID" binding:"required"`
+	TimeRange *TimeRangeParams `json:"timeRange" binding:"required"`
 }

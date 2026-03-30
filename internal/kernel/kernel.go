@@ -13,6 +13,7 @@ import (
 	"go-timekeeper/internal/repository"
 	"go-timekeeper/internal/router"
 	"go-timekeeper/internal/service"
+	"go-timekeeper/internal/uow"
 	"net/http"
 	"os"
 	"os/signal"
@@ -52,19 +53,23 @@ func New() (*Kernel, error) {
 	}
 
 	// Repositories
+	unitOfWork := uow.NewUnitOfWorkManager(db.DB)
 	userRepo := repository.NewUserRepository(db.DB, log)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db.DB, log)
 	projectRepo := repository.NewProjectRepository(db.DB, log)
 	taskRepo := repository.NewTaskRepository(db.DB, log)
+	timeRecordRepo := repository.NewTimeRecordRepository(db.DB, log)
 
 	// Services
 	tokenManager := auth.NewTokenManager(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTLMinutes, cfg.Auth.RefreshTokenTTLHours)
 	userService := service.NewUserService(userRepo, tokenManager, refreshTokenRepo)
 	projectService := service.NewProjectService(projectRepo)
-	taskService := service.NewTaskService(taskRepo)
+	timeRecordService := service.NewTimeRecordService(timeRecordRepo)
+	taskService := service.NewTaskService(taskRepo, timeRecordService, unitOfWork)
+	reportService := service.NewReportService(timeRecordRepo, taskRepo, projectRepo)
 
 	// Handlers
-	handlersPool := handler.NewHandlersPool(userService, projectService, taskService, log)
+	handlersPool := handler.NewHandlersPool(userService, projectService, taskService, reportService, log)
 
 	// Gin router and HTTP server setup
 	routerEngine := gin.Default()

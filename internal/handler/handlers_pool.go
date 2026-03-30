@@ -10,6 +10,7 @@ type HandlersPool struct {
 	User    *UserHandler
 	Project *ProjectHandler
 	Task    *TaskHandler
+	Report  *ReportHandler
 }
 
 // NewHandlersPool creates a new HandlersPool instance
@@ -17,11 +18,13 @@ func NewHandlersPool(
 	userService service.UserServiceInterface,
 	projectService service.ProjectServiceInterface,
 	taskService service.TaskServiceInterface,
+	reportService service.ReportServiceInterface,
 	logger *logger.Logger,
 ) *HandlersPool {
 	return &HandlersPool{
 		User:    NewUserHandler(userService, logger),
 		Project: NewProjectHandler(projectService, logger),
 		Task:    NewTaskHandler(taskService, logger),
+		Report:  NewReportHandler(reportService, logger),
 	}
 }

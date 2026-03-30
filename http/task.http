@@ -106,6 +106,7 @@ Authorization: Bearer {{user_access_token}}
 PATCH {{host}}/api/task/{{user_task3_id}}/start
 Content-Type: application/json
 Authorization: Bearer {{user_access_token}}
+X-Timezone: Europe/Prague
 
 ### Get task 3
 GET {{host}}/api/task/{{user_task3_id}}

@@ -27,4 +27,5 @@ const (
 	LogMessageFailedToStartTask               = "failed_to_start_task"
 	LogMessageFailedToStopTask                = "failed_to_stop_task"
 	LogMessageFailedToCloseTask               = "failed_to_close_task"
+	LogMessageFailedToGetReport               = "failed_to_get_report"
 )

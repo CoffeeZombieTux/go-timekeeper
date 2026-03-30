@@ -7,14 +7,15 @@ import (
 	"go-timekeeper/internal/apperror"
 	"go-timekeeper/internal/logger"
 	"go-timekeeper/internal/model"
+	"go-timekeeper/internal/uow"
 
 	"github.com/google/uuid"
 )
 
 // TaskRepositoryInterface represents a task repository.
 type TaskRepositoryInterface interface {
-	Save(ctx context.Context, task *model.Task) (*model.Task, error)
-	Get(ctx context.Context, id uuid.UUID) (*model.Task, error)
+	Save(ctx context.Context, task *model.Task, unit *uow.UnitOfWork) (*model.Task, error)
+	Get(ctx context.Context, id uuid.UUID, unit *uow.UnitOfWork) (*model.Task, error)
 	GetByProjectAndUserId(
 		ctx context.Context,
 		projectID uuid.UUID,
@@ -29,7 +30,8 @@ type TaskRepositoryInterface interface {
 		userID uuid.UUID,
 		isActive *bool,
 	) (int, error)
-	Delete(ctx context.Context, task *model.Task) error
+	Delete(ctx context.Context, task *model.Task, unit *uow.UnitOfWork) error
+	getExecutor(unit *uow.UnitOfWork) (SQLExecutor, bool)
 }
 
 // TaskRepository represents a task repository.
@@ -47,7 +49,9 @@ func NewTaskRepository(db *sql.DB, logger *logger.Logger) TaskRepositoryInterfac
 }
 
 // Save saves a task to the database.
-func (taskRepo TaskRepository) Save(ctx context.Context, task *model.Task) (*model.Task, error) {
+func (taskRepo TaskRepository) Save(ctx context.Context, task *model.Task, unit *uow.UnitOfWork) (*model.Task, error) {
+	exec, _ := taskRepo.getExecutor(unit)
+
 	if task.ID == uuid.Nil {
 		query := `
 			INSERT INTO task (user_id, project_id, name, status)
@@ -55,7 +59,7 @@ func (taskRepo TaskRepository) Save(ctx context.Context, task *model.Task) (*mod
 			RETURNING *;
 		`
 
-		err := taskRepo.db.QueryRowContext(
+		err := exec.QueryRowContext(
 			ctx,
 			query,
 			task.UserID,
@@ -72,7 +76,7 @@ func (taskRepo TaskRepository) Save(ctx context.Context, task *model.Task) (*mod
 		UPDATE task SET project_id = $2, name = $3, status = $4 , updated_at = NOW()
 		WHERE id = $1 RETURNING project_id, name, status, updated_at;
 	`
-	err := taskRepo.db.QueryRowContext(
+	err := exec.QueryRowContext(
 		ctx,
 		query,
 		task.ID,
@@ -87,10 +91,14 @@ func (taskRepo TaskRepository) Save(ctx context.Context, task *model.Task) (*mod
 }
 
 // Get gets a task by ID.
-func (taskRepo TaskRepository) Get(ctx context.Context, id uuid.UUID) (*model.Task, error) {
+func (taskRepo TaskRepository) Get(ctx context.Context, id uuid.UUID, unit *uow.UnitOfWork) (*model.Task, error) {
+	exec, isTx := taskRepo.getExecutor(unit)
 	query := `SELECT * FROM task WHERE id = $1`
+	if isTx {
+		query += ` FOR UPDATE`
+	}
 	var task model.Task
-	err := taskRepo.db.QueryRowContext(
+	err := exec.QueryRowContext(
 		ctx,
 		query,
 		id,
@@ -182,8 +190,18 @@ func (taskRepo TaskRepository) CountByProjectAndUserId(
 }
 
 // Delete deletes a task from the database.
-func (taskRepo TaskRepository) Delete(ctx context.Context, task *model.Task) error {
+func (taskRepo TaskRepository) Delete(ctx context.Context, task *model.Task, unit *uow.UnitOfWork) error {
+	exec, _ := taskRepo.getExecutor(unit)
 	query := `DELETE FROM task WHERE id = $1`
-	_, err := taskRepo.db.ExecContext(ctx, query, task.ID)
+	_, err := exec.ExecContext(ctx, query, task.ID)
 	return err
+}
+
+// getExecutor returns the SQLExecutor to use for the current transaction or the database connection.
+func (taskRepo TaskRepository) getExecutor(unit *uow.UnitOfWork) (SQLExecutor, bool) {
+	if unit != nil && unit.GetTransaction() != nil {
+		return unit.GetTransaction(), true
+	}
+
+	return taskRepo.db, false
 }

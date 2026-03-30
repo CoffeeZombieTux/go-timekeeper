@@ -2,12 +2,14 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"go-timekeeper/internal/logger"
 	"go-timekeeper/internal/middleware"
 	apimodel "go-timekeeper/internal/model/api"
 	"go-timekeeper/internal/service"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -79,7 +81,7 @@ func (taskHandler *TaskHandler) GetTask(ctx *gin.Context) {
 		return
 	}
 
-	response, err := taskHandler.taskService.Get(ctx.Request.Context(), id)
+	response, err := taskHandler.taskService.Get(ctx.Request.Context(), id, nil)
 	if err != nil {
 		userId, _ := middleware.UserIDFromContext(ctx.Request.Context())
 		taskHandler.logger.WithError(err).WithFields(logger.Fields{
@@ -168,6 +170,7 @@ func (taskHandler *TaskHandler) DeleteTask(ctx *gin.Context) {
 		}).Error(logger.LogMessageFailedToDeleteTask)
 		status, code, message, details := mapDomainError(err)
 		writeError(ctx, status, message, code, details)
+		return
 	}
 	writeSuccess(ctx, http.StatusOK, "Task deleted", "")
 }
@@ -178,7 +181,14 @@ func (taskHandler *TaskHandler) StartTask(ctx *gin.Context) {
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
 	}
-	err = taskHandler.taskService.Start(ctx.Request.Context(), id)
+
+	workTimezone := ctx.GetHeader("X-Timezone")
+	err = validateTimezone(workTimezone)
+	if err != nil {
+		writeBindError(ctx, errors.New("invalid or missing X-Timezone header"))
+	}
+
+	err = taskHandler.taskService.Start(ctx.Request.Context(), id, workTimezone)
 	if err != nil {
 		userId, _ := middleware.UserIDFromContext(ctx.Request.Context())
 		taskHandler.logger.WithError(err).WithFields(logger.Fields{
@@ -188,6 +198,7 @@ func (taskHandler *TaskHandler) StartTask(ctx *gin.Context) {
 		}).Error(logger.LogMessageFailedToStartTask)
 		status, code, message, details := mapDomainError(err)
 		writeError(ctx, status, message, code, details)
+		return
 	}
 	writeSuccess(ctx, http.StatusOK, "Task started", "")
 }
@@ -208,6 +219,7 @@ func (taskHandler *TaskHandler) StopTask(ctx *gin.Context) {
 		}).Error(logger.LogMessageFailedToStopTask)
 		status, code, message, details := mapDomainError(err)
 		writeError(ctx, status, message, code, details)
+		return
 	}
 	writeSuccess(ctx, http.StatusOK, "Task stopped", "")
 }
@@ -228,6 +240,20 @@ func (taskHandler *TaskHandler) CloseTask(ctx *gin.Context) {
 		}).Error(logger.LogMessageFailedToCloseTask)
 		status, code, message, details := mapDomainError(err)
 		writeError(ctx, status, message, code, details)
+		return
 	}
 	writeSuccess(ctx, http.StatusOK, "Task closed", "")
+}
+
+// validateTimezone validates the timezone string.
+func validateTimezone(tz string) error {
+	if tz == "" {
+		return errors.New("timezone is required")
+	}
+
+	_, err := time.LoadLocation(tz)
+	if err != nil {
+		return fmt.Errorf("invalid timezone: %s", tz)
+	}
+	return nil
 }
