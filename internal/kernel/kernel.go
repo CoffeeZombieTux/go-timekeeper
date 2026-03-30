@@ -65,7 +65,7 @@ func New() (*Kernel, error) {
 	userService := service.NewUserService(userRepo, tokenManager, refreshTokenRepo)
 	projectService := service.NewProjectService(projectRepo)
 	timeRecordService := service.NewTimeRecordService(timeRecordRepo)
-	taskService := service.NewTaskService(taskRepo, timeRecordService, unitOfWork)
+	taskService := service.NewTaskService(taskRepo, timeRecordRepo, timeRecordService, unitOfWork)
 	reportService := service.NewReportService(timeRecordRepo, taskRepo, projectRepo)
 
 	// Handlers

@@ -33,6 +33,7 @@ type TaskServiceInterface interface {
 // TaskService is a struct that implements the TaskServiceInterface.
 type TaskService struct {
 	taskRepo          repository.TaskRepositoryInterface
+	timeRecordRepo    repository.TimeRecordRepositoryInterface
 	timeRecordService TimeRecordServiceInterface
 	uowManager        *uow.UnitOfWorkManager
 }
@@ -40,11 +41,13 @@ type TaskService struct {
 // NewTaskService creates a new TaskService instance.
 func NewTaskService(
 	taskRepo repository.TaskRepositoryInterface,
+	timeRecordRepo repository.TimeRecordRepositoryInterface,
 	timeRecordService TimeRecordServiceInterface,
 	uow *uow.UnitOfWorkManager,
 ) *TaskService {
 	return &TaskService{
 		taskRepo:          taskRepo,
+		timeRecordRepo:    timeRecordRepo,
 		timeRecordService: timeRecordService,
 		uowManager:        uow,
 	}
@@ -71,13 +74,31 @@ func (taskService *TaskService) Update(ctx context.Context, req *apimodel.Update
 	var task *model.Task
 	err := uow.WithUnitOfWork(ctx, taskService.uowManager, func(unit *uow.UnitOfWork) error {
 		var err error
+		var isProjectChanged = false
 		task, err = taskService.Get(ctx, req.ID, unit)
 		if err != nil {
 			return err
 		}
+		if req.ProjectID != task.ProjectID {
+			isProjectChanged = true
+		}
 		task.Name = req.Name
 		task.ProjectID = req.ProjectID
+
 		task, err = taskService.taskRepo.Save(ctx, task, unit)
+		if err != nil {
+			return err
+		}
+		if isProjectChanged {
+			timeRecords, err := taskService.timeRecordRepo.GetListByTaskForUpdate(ctx, task.ID, unit.GetTransaction())
+			for _, timeRecord := range timeRecords {
+				timeRecord.ProjectID = req.ProjectID
+				err = taskService.timeRecordRepo.UpdateProjectReference(ctx, *timeRecord, unit.GetTransaction())
+				if err != nil {
+					return err
+				}
+			}
+		}
 		return err
 	})
 	if err != nil {

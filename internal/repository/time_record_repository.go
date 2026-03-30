@@ -3,8 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"go-timekeeper/internal/apperror"
 	"go-timekeeper/internal/logger"
 	"go-timekeeper/internal/model"
 	"time"
@@ -17,7 +15,8 @@ import (
 type TimeRecordRepositoryInterface interface {
 	InsertActive(ctx context.Context, rec model.TimeRecord, tx *sql.Tx) error
 	GetActiveByUserForUpdate(ctx context.Context, userID uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error)
-
+	GetListByTaskForUpdate(ctx context.Context, taskID uuid.UUID, tx *sql.Tx) ([]*model.TimeRecord, error)
+	UpdateProjectReference(ctx context.Context, rec model.TimeRecord, tx *sql.Tx) error
 	UpdateClosedRecord(ctx context.Context, rec model.ClosedTimeRecordInput, tx *sql.Tx) error
 	InsertClosedRecord(ctx context.Context, rec model.ClosedTimeRecordInput, tx *sql.Tx) error
 
@@ -32,14 +31,14 @@ type TimeRecordRepositoryInterface interface {
 		userID, projectID uuid.UUID,
 		taskIDs *[]uuid.UUID,
 		fromDate, toDate time.Time,
-	) ([]model.TimeRecordReportRow, error)
+	) ([]*model.TimeRecordReportRow, error)
 
 	GetGeneralReportRows(
 		ctx context.Context,
 		userID uuid.UUID,
 		projectIDs *[]uuid.UUID,
 		fromDate, toDate time.Time,
-	) ([]model.TimeRecordReportRow, error)
+	) ([]*model.TimeRecordReportRow, error)
 }
 
 // TimeRecordRepository is a struct that implements the TimeRecordRepositoryInterface.
@@ -116,13 +115,6 @@ func (timeRecordRepo *TimeRecordRepository) GetActiveByUserForUpdate(
 		&rec.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, apperror.New(
-				apperror.CodeNotFoundCode,
-				apperror.CodeNotFoundMessage,
-				"Current user does not have active working session",
-			)
-		}
 		return nil, err
 	}
 
@@ -188,6 +180,69 @@ func (timeRecordRepo *TimeRecordRepository) InsertClosedRecord(
 	return err
 }
 
+// GetListByTaskForUpdate loads all TimeRecord rows assigned to a task.
+func (timeRecordRepo *TimeRecordRepository) GetListByTaskForUpdate(
+	ctx context.Context,
+	taskID uuid.UUID,
+	tx *sql.Tx,
+) ([]*model.TimeRecord, error) {
+	const q = `
+		SELECT
+			id,
+			project_id,
+			task_id,
+			work_date,
+			work_timezone,
+			total_minutes
+		FROM time_record
+		WHERE task_id = $1
+		FOR UPDATE
+	`
+
+	rows, err := tx.QueryContext(ctx, q, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]*model.TimeRecord, 0)
+	for rows.Next() {
+		var row model.TimeRecord
+		if err := rows.Scan(&row.ID, &row.ProjectID, &row.TaskID, &row.WorkDate, &row.Timezone, &row.TotalMinutes); err != nil {
+			return nil, err
+		}
+		result = append(result, &row)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (timeRecordRepo *TimeRecordRepository) UpdateProjectReference(
+	ctx context.Context,
+	entity model.TimeRecord,
+	tx *sql.Tx,
+) error {
+	const q = `
+		UPDATE time_record
+		SET
+			project_id = $2,
+			updated_at = NOW()
+		WHERE id = $1
+	`
+	_, err := tx.ExecContext(ctx, q,
+		entity.ID,
+		entity.ProjectID,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetTaskReportRows returns a list of time records for a given user, task, and date range.
 func (timeRecordRepo *TimeRecordRepository) GetTaskReportRows(
 	ctx context.Context,
@@ -216,6 +271,117 @@ func (timeRecordRepo *TimeRecordRepository) GetTaskReportRows(
 	if err != nil {
 		return nil, err
 	}
+	return getTimeRecordsFromDbRows(rows)
+}
+
+// GetProjectReportRows returns a list of time records for a given user, project, and date range.
+func (timeRecordRepo *TimeRecordRepository) GetProjectReportRows(
+	ctx context.Context,
+	userID, projectID uuid.UUID,
+	taskIDs *[]uuid.UUID,
+	fromDate, toDate time.Time,
+) ([]*model.TimeRecordReportRow, error) {
+	args := []interface{}{userID, projectID, fromDate, toDate}
+	q := `
+		SELECT
+			id,
+			project_id,
+			task_id,
+			work_date,
+			work_timezone,
+			total_minutes
+		FROM time_record
+		WHERE user_id = $1
+		  AND project_id = $2
+		  AND work_date BETWEEN $3 AND $4
+		  AND ended_at IS NOT NULL
+		  AND total_minutes IS NOT NULL
+		  AND total_minutes > 0`
+
+	if taskIDs != nil {
+		taskIDValues := make([]string, 0, len(*taskIDs))
+		for _, taskID := range *taskIDs {
+			taskIDValues = append(taskIDValues, taskID.String())
+		}
+
+		q += `
+		  AND task_id = ANY($5)`
+		args = append(args, pq.Array(taskIDValues))
+	}
+
+	q += `
+		ORDER BY task_id, work_date, id
+	`
+
+	rows, err := timeRecordRepo.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	return getTimeRecordsFromDbRows(rows)
+}
+
+// GetGeneralReportRows returns a list of time records for a given user, project, and date range.
+func (timeRecordRepo *TimeRecordRepository) GetGeneralReportRows(
+	ctx context.Context,
+	userID uuid.UUID,
+	projectIDs *[]uuid.UUID,
+	fromDate, toDate time.Time,
+) ([]*model.TimeRecordReportRow, error) {
+	args := []interface{}{userID, fromDate, toDate}
+	q := `
+		SELECT
+			id,
+			project_id,
+			task_id,
+			work_date,
+			work_timezone,
+			total_minutes
+		FROM time_record
+		WHERE user_id = $1
+		  AND work_date BETWEEN $2 AND $3
+		  AND ended_at IS NOT NULL
+		  AND total_minutes IS NOT NULL
+		  AND total_minutes > 0`
+
+	if projectIDs != nil {
+		projectIDValues := make([]string, 0, len(*projectIDs))
+		for _, projectID := range *projectIDs {
+			projectIDValues = append(projectIDValues, projectID.String())
+		}
+
+		q += `
+		  AND project_id = ANY($4)`
+		args = append(args, pq.Array(projectIDValues))
+	}
+
+	q += `
+		ORDER BY project_id, task_id, work_date, id
+	`
+
+	rows, err := timeRecordRepo.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	return getTimeRecordsFromDbRows(rows)
+	//defer rows.Close()
+	//
+	//result := make([]*model.TimeRecordReportRow, 0)
+	//for rows.Next() {
+	//	var row model.TimeRecordReportRow
+	//	if err := rows.Scan(&row.ID, &row.ProjectID, &row.TaskID, &row.WorkDate, &row.WorkTimezone, &row.TotalMinutes); err != nil {
+	//		return nil, err
+	//	}
+	//	result = append(result, &row)
+	//}
+	//
+	//if err := rows.Err(); err != nil {
+	//	return nil, err
+	//}
+	//
+	//return result, nil
+}
+
+func getTimeRecordsFromDbRows(rows *sql.Rows) ([]*model.TimeRecordReportRow, error) {
 	defer rows.Close()
 
 	result := make([]*model.TimeRecordReportRow, 0)
@@ -232,116 +398,4 @@ func (timeRecordRepo *TimeRecordRepository) GetTaskReportRows(
 	}
 
 	return result, nil
-}
-
-// GetProjectReportRows returns a list of time records for a given user, project, and date range.
-func (timeRecordRepo *TimeRecordRepository) GetProjectReportRows(
-	ctx context.Context,
-	userID, projectID uuid.UUID,
-	taskIDs *[]uuid.UUID,
-	fromDate, toDate time.Time,
-) ([]model.TimeRecordReportRow, error) {
-	taskIDsArg := uuidListToSQLArg(taskIDs)
-
-	const q = `
-		SELECT
-			id,
-			project_id,
-			task_id,
-			work_date,
-			work_timezone,
-			total_minutes
-		FROM time_record
-		WHERE user_id = $1
-		  AND project_id = $2
-		  AND work_date BETWEEN $3 AND $4
-		  AND ended_at IS NOT NULL
-		  AND total_minutes IS NOT NULL
-		  AND total_minutes > 0
-		  AND ($5::uuid[] IS NULL OR task_id = ANY($5))
-		ORDER BY task_id, work_date, id
-	`
-
-	rows, err := timeRecordRepo.db.QueryContext(ctx, q, userID, projectID, fromDate, toDate, taskIDsArg)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	result := make([]model.TimeRecordReportRow, 0)
-	for rows.Next() {
-		var row model.TimeRecordReportRow
-		if err := rows.Scan(&row.ID, &row.ProjectID, &row.TaskID, &row.WorkDate, &row.WorkTimezone, &row.TotalMinutes); err != nil {
-			return nil, err
-		}
-		result = append(result, row)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// GetGeneralReportRows returns a list of time records for a given user, project, and date range.
-func (timeRecordRepo *TimeRecordRepository) GetGeneralReportRows(
-	ctx context.Context,
-	userID uuid.UUID,
-	projectIDs *[]uuid.UUID,
-	fromDate, toDate time.Time,
-) ([]model.TimeRecordReportRow, error) {
-	projectIDsArg := uuidListToSQLArg(projectIDs)
-
-	const q = `
-		SELECT
-			id,
-			project_id,
-			task_id,
-			work_date,
-			work_timezone,
-			total_minutes
-		FROM time_record
-		WHERE user_id = $1
-		  AND work_date BETWEEN $2 AND $3
-		  AND ended_at IS NOT NULL
-		  AND total_minutes IS NOT NULL
-		  AND total_minutes > 0
-		  AND ($4::uuid[] IS NULL OR project_id = ANY($4))
-		ORDER BY project_id, task_id, work_date, id
-	`
-
-	rows, err := timeRecordRepo.db.QueryContext(ctx, q, userID, fromDate, toDate, projectIDsArg)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	result := make([]model.TimeRecordReportRow, 0)
-	for rows.Next() {
-		var row model.TimeRecordReportRow
-		if err := rows.Scan(&row.ID, &row.ProjectID, &row.TaskID, &row.WorkDate, &row.WorkTimezone, &row.TotalMinutes); err != nil {
-			return nil, err
-		}
-		result = append(result, row)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// uuidListToSQLArg converts a list of uuids to a SQL argument.
-func uuidListToSQLArg(ids *[]uuid.UUID) interface{} {
-	if ids == nil || len(*ids) == 0 {
-		return nil
-	}
-
-	values := make([]string, 0, len(*ids))
-	for _, id := range *ids {
-		values = append(values, id.String())
-	}
-	return pq.Array(values)
 }

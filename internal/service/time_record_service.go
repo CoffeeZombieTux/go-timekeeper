@@ -93,6 +93,13 @@ func (timeRecordService *TimeRecordService) StopTask(ctx context.Context, task *
 
 	active, err := timeRecordService.timeRecordRepo.GetActiveByUserForUpdate(ctx, task.UserID, tx)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return apperror.New(
+				apperror.CodeNotFoundCode,
+				apperror.CodeNotFoundMessage,
+				"Current user does not have active working session",
+			)
+		}
 		return err
 	}
 

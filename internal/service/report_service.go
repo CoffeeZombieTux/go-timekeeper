@@ -92,7 +92,7 @@ func (reportService *ReportService) GeneralReport(
 
 		grouped[row.ProjectID][row.TaskID][dateKey] = append(
 			grouped[row.ProjectID][row.TaskID][dateKey],
-			&row,
+			row,
 		)
 	}
 
@@ -166,7 +166,7 @@ func (reportService *ReportService) ProjectReport(
 
 		grouped[row.TaskID][dateKey] = append(
 			grouped[row.TaskID][dateKey],
-			&row,
+			row,
 		)
 	}
 
