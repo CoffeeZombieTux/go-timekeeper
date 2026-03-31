@@ -136,6 +136,10 @@
       "value": ""
     },
     {
+      "key": "timeRecordId",
+      "value": ""
+    },
+    {
       "key": "reportFromDate",
       "value": ""
     },
@@ -1332,6 +1336,160 @@
             "api",
             "report",
             "task"
+          ]
+        }
+      }
+    },
+    {
+      "name": "24 Create Time Record",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('time record created', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "});",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('timeRecordId', responseData.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectID\": \"{{project1Id}}\",\n  \"taskID\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:00:00+01:00\",\n  \"endTime\": \"2026-03-31T10:00:00+01:00\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/task/session",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "session"
+          ]
+        }
+      }
+    },
+    {
+      "name": "25 Update Time Record",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('time record updated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ID\": \"{{timeRecordId}}\",\n  \"projectID\": \"{{project1Id}}\",\n  \"taskID\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:15:00+01:00\",\n  \"endTime\": \"2026-03-31T10:15:00+01:00\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/task/session",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "session"
+          ]
+        }
+      }
+    },
+    {
+      "name": "26 Delete Time Record",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('time record deleted', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "postman.setEnvironmentVariable('timeRecordId', '');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/session/{{timeRecordId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "session",
+            "{{timeRecordId}}"
           ]
         }
       }
