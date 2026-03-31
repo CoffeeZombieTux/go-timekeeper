@@ -91,6 +91,9 @@ func (taskService *TaskService) Update(ctx context.Context, req *apimodel.Update
 		}
 		if isProjectChanged {
 			timeRecords, err := taskService.timeRecordRepo.GetListByTaskForUpdate(ctx, task.ID, unit.GetTransaction())
+			if err != nil {
+				return err
+			}
 			for _, timeRecord := range timeRecords {
 				timeRecord.ProjectID = req.ProjectID
 				_, err = taskService.timeRecordRepo.Update(ctx, timeRecord, unit.GetTransaction())
@@ -149,12 +152,6 @@ func (taskService *TaskService) GetByProject(
 	currentPage := params.Offset/params.Limit + 1
 	totalPages := (totalCount + params.Limit - 1) / params.Limit
 
-	if currentPage > totalPages {
-		return nil, nil, apperror.New(apperror.CodeDBNoRowsMessage, apperror.CodeDBNoRowsMessage,
-			fmt.Sprintf("requested page %d is out of range", currentPage),
-		)
-	}
-
 	pagination := &apimodel.PaginationResponse{
 		Limit:       params.Limit,
 		Offset:      params.Offset,
@@ -163,8 +160,21 @@ func (taskService *TaskService) GetByProject(
 		TotalPages:  totalPages,
 	}
 
+	if totalCount == 0 {
+		pagination.CurrentPage = 0
+		return []*model.Task{}, pagination, nil
+	}
+
+	if currentPage > totalPages {
+		return nil, nil, apperror.New(
+			apperror.CodeDBNoRowsCode,
+			apperror.CodeDBNoRowsMessage,
+			fmt.Sprintf("requested page %d is out of range", currentPage),
+		)
+	}
+
 	if len(tasks) == 0 {
-		return []*model.Task{}, nil, nil
+		return []*model.Task{}, pagination, nil
 	}
 	return tasks, pagination, nil
 }

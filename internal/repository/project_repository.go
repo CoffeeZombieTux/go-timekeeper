@@ -99,8 +99,12 @@ func (projectRepo ProjectRepository) GetUserProjects(ctx context.Context, userID
 	for rows.Next() {
 		var project model.Project
 		if err := rows.Scan(&project.ID, &project.Name, &project.UserID, &project.CreatedAt, &project.UpdatedAt); err != nil {
+			return nil, err
 		}
 		projects = append(projects, &project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return projects, nil
 }

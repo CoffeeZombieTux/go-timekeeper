@@ -15,7 +15,7 @@ func setupAuthRoutes(engine *gin.Engine, handlersPool *handler.HandlersPool, tok
 		authRoutes.POST("/register", handlersPool.User.Register)
 		authRoutes.POST("/login", handlersPool.User.Login)
 		authRoutes.POST("/logout", middleware.AuthMiddleware(tokenManager), handlersPool.User.Logout)
-		authRoutes.POST("/refresh", middleware.AuthMiddleware(tokenManager), handlersPool.User.RefreshToken)
+		authRoutes.POST("/refresh", handlersPool.User.RefreshToken)
 		authRoutes.POST("/change-password", middleware.AuthMiddleware(tokenManager), handlersPool.User.ChangePassword)
 	}
 }

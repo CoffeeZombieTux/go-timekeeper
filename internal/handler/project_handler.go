@@ -50,6 +50,7 @@ func (projectHandler *ProjectHandler) GetProject(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
+		return
 	}
 	response, err := projectHandler.projectService.Get(ctx.Request.Context(), id)
 	if err != nil {
@@ -109,6 +110,7 @@ func (projectHandler *ProjectHandler) DeleteProject(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
+		return
 	}
 	err = projectHandler.projectService.Delete(ctx.Request.Context(), id)
 	if err != nil {

@@ -62,6 +62,9 @@ func writeBindError(ctx *gin.Context, err error) {
 			})
 		}
 	}
+	if len(details) == 0 && err != nil {
+		details = append(details, apimodel.ErrorDetail{Reason: err.Error()})
+	}
 
 	writeError(
 		ctx,

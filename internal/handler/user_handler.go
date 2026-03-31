@@ -51,6 +51,7 @@ func (userHandler *UserHandler) Login(ctx *gin.Context) {
 	var req apimodel.LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		writeBindError(ctx, err)
+		return
 	}
 	req.Email = sanitizeEmail(req.Email)
 
@@ -72,12 +73,13 @@ func (userHandler *UserHandler) RefreshToken(ctx *gin.Context) {
 	var req apimodel.RefreshRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		writeBindError(ctx, err)
+		return
 	}
 	response, err := userHandler.UserService.RefreshToken(ctx.Request.Context(), req)
 	if err != nil {
 		userHandler.logger.WithError(err).WithFields(logger.Fields{
 			"request_id": requestIDFromContext(ctx),
-			"email":      req.RefreshToken,
+			"operation":  "refresh_token",
 		}).Error(logger.LogMessageFailedToRefreshUserToken)
 		status, code, message, details := mapDomainError(err)
 		writeError(ctx, status, message, code, details)
@@ -91,13 +93,14 @@ func (userHandler *UserHandler) Logout(ctx *gin.Context) {
 	var req apimodel.RefreshRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		writeBindError(ctx, err)
+		return
 	}
 
 	err := userHandler.UserService.Logout(ctx.Request.Context(), req)
 	if err != nil {
 		userHandler.logger.WithError(err).WithFields(logger.Fields{
 			"request_id": requestIDFromContext(ctx),
-			"email":      req.RefreshToken,
+			"operation":  "logout",
 		}).Error(logger.LogMessageFailedToLogoutUser)
 		status, code, message, details := mapDomainError(err)
 		writeError(ctx, status, message, code, details)
@@ -125,6 +128,7 @@ func (userHandler *UserHandler) ChangePassword(ctx *gin.Context) {
 	var req apimodel.ChangePasswordRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		writeBindError(ctx, err)
+		return
 	}
 	err := userHandler.UserService.ChangePassword(ctx.Request.Context(), req)
 	if err != nil {

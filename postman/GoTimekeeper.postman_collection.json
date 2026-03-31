@@ -1430,7 +1430,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"ID\": \"{{timeRecordId}}\",\n  \"projectID\": \"{{project1Id}}\",\n  \"taskID\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:15:00+01:00\",\n  \"endTime\": \"2026-03-31T10:15:00+01:00\"\n}"
+          "raw": "{\n  \"id\": \"{{timeRecordId}}\",\n  \"projectID\": \"{{project1Id}}\",\n  \"taskID\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:15:00+01:00\",\n  \"endTime\": \"2026-03-31T10:15:00+01:00\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/task/session",

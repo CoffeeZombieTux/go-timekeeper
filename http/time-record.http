@@ -22,7 +22,7 @@ Content-Type: application/json
 Authorization: Bearer {{user_access_token}}
 
 {
-  "ID": "{{user_time_record_id}}",
+  "id": "{{user_time_record_id}}",
   "projectID": "{{user_project1_id}}",
   "taskID": "{{user_task1_id}}",
   "workDate": "2026-03-31T00:00:00Z",
