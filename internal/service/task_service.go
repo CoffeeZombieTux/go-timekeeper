@@ -93,7 +93,7 @@ func (taskService *TaskService) Update(ctx context.Context, req *apimodel.Update
 			timeRecords, err := taskService.timeRecordRepo.GetListByTaskForUpdate(ctx, task.ID, unit.GetTransaction())
 			for _, timeRecord := range timeRecords {
 				timeRecord.ProjectID = req.ProjectID
-				err = taskService.timeRecordRepo.UpdateProjectReference(ctx, *timeRecord, unit.GetTransaction())
+				_, err = taskService.timeRecordRepo.Update(ctx, timeRecord, unit.GetTransaction())
 				if err != nil {
 					return err
 				}

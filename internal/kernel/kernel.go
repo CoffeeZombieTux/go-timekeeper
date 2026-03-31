@@ -64,12 +64,19 @@ func New() (*Kernel, error) {
 	tokenManager := auth.NewTokenManager(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTLMinutes, cfg.Auth.RefreshTokenTTLHours)
 	userService := service.NewUserService(userRepo, tokenManager, refreshTokenRepo)
 	projectService := service.NewProjectService(projectRepo)
-	timeRecordService := service.NewTimeRecordService(timeRecordRepo)
+	timeRecordService := service.NewTimeRecordService(timeRecordRepo, unitOfWork)
 	taskService := service.NewTaskService(taskRepo, timeRecordRepo, timeRecordService, unitOfWork)
 	reportService := service.NewReportService(timeRecordRepo, taskRepo, projectRepo)
 
 	// Handlers
-	handlersPool := handler.NewHandlersPool(userService, projectService, taskService, reportService, log)
+	handlersPool := handler.NewHandlersPool(
+		userService,
+		projectService,
+		taskService,
+		reportService,
+		timeRecordService,
+		log,
+	)
 
 	// Gin router and HTTP server setup
 	routerEngine := gin.Default()
