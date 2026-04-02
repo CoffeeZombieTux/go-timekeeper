@@ -10,7 +10,7 @@ type ErrorDetail struct {
 type ErrorObject struct {
 	Code      string        `json:"code"`
 	Details   []ErrorDetail `json:"details,omitempty"`
-	RequestID string        `json:"request_id,omitempty"`
+	RequestID string        `json:"requestId,omitempty"`
 }
 
 // APIResponse is a standard envelope for all API responses.

@@ -9,16 +9,16 @@ import (
 // TimeRecord represents a time record entity in the database.
 type TimeRecord struct {
 	ID           uuid.UUID  `json:"id"`
-	UserID       uuid.UUID  `json:"user_id"`
-	ProjectID    uuid.UUID  `json:"project_id"`
-	TaskID       uuid.UUID  `json:"task_id"`
-	WorkDate     time.Time  `json:"work_date"`
+	UserID       uuid.UUID  `json:"userId"`
+	ProjectID    uuid.UUID  `json:"projectId"`
+	TaskID       uuid.UUID  `json:"taskId"`
+	WorkDate     time.Time  `json:"workDate"`
 	Timezone     string     `json:"timezone"`
-	StartedAt    time.Time  `json:"started_at"`
-	EndedAt      *time.Time `json:"ended_at"`
-	TotalMinutes *int       `json:"total_minutes"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
+	StartedAt    time.Time  `json:"startedAt"`
+	EndedAt      *time.Time `json:"endedAt"`
+	TotalMinutes *int       `json:"totalMinutes"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
 }
 
 // ClosedTimeRecordInput represents the input for closing a time record.

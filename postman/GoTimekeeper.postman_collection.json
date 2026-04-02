@@ -399,7 +399,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"{{task1Name}}\",\n  \"projectID\": \"{{project1Id}}\"\n}"
+          "raw": "{\n  \"name\": \"{{task1Name}}\",\n  \"projectId\": \"{{project1Id}}\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/task",
@@ -452,7 +452,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"{{task2Name}}\",\n  \"projectID\": \"{{project2Id}}\"\n}"
+          "raw": "{\n  \"name\": \"{{task2Name}}\",\n  \"projectId\": \"{{project2Id}}\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/task",
@@ -505,7 +505,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"{{task3Name}}\",\n  \"projectID\": \"{{project3Id}}\"\n}"
+          "raw": "{\n  \"name\": \"{{task3Name}}\",\n  \"projectId\": \"{{project3Id}}\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/task",
@@ -1060,7 +1060,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"projectID\": \"{{project1Id}}\",\n  \"tasks\": [\"{{task1Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+          "raw": "{\n  \"projectId\": \"{{project1Id}}\",\n  \"tasks\": [\"{{task1Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/report/project",
@@ -1113,7 +1113,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"projectID\": \"{{project2Id}}\",\n  \"tasks\": [\"{{task2Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+          "raw": "{\n  \"projectId\": \"{{project2Id}}\",\n  \"tasks\": [\"{{task2Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/report/project",
@@ -1166,7 +1166,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"projectID\": \"{{project3Id}}\",\n  \"tasks\": [\"{{task3Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+          "raw": "{\n  \"projectId\": \"{{project3Id}}\",\n  \"tasks\": [\"{{task3Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/report/project",
@@ -1219,7 +1219,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"taskID\": \"{{task1Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+          "raw": "{\n  \"taskId\": \"{{task1Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/report/task",
@@ -1272,7 +1272,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"taskID\": \"{{task2Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+          "raw": "{\n  \"taskId\": \"{{task2Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/report/task",
@@ -1325,7 +1325,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"taskID\": \"{{task3Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+          "raw": "{\n  \"taskId\": \"{{task3Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/report/task",
@@ -1379,7 +1379,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"projectID\": \"{{project1Id}}\",\n  \"taskID\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:00:00+01:00\",\n  \"endTime\": \"2026-03-31T10:00:00+01:00\"\n}"
+          "raw": "{\n  \"projectId\": \"{{project1Id}}\",\n  \"taskId\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:00:00+01:00\",\n  \"endTime\": \"2026-03-31T10:00:00+01:00\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/task/session",
@@ -1430,7 +1430,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"id\": \"{{timeRecordId}}\",\n  \"projectID\": \"{{project1Id}}\",\n  \"taskID\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:15:00+01:00\",\n  \"endTime\": \"2026-03-31T10:15:00+01:00\"\n}"
+          "raw": "{\n  \"id\": \"{{timeRecordId}}\",\n  \"projectId\": \"{{project1Id}}\",\n  \"taskId\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:15:00+01:00\",\n  \"endTime\": \"2026-03-31T10:15:00+01:00\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/task/session",

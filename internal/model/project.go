@@ -10,7 +10,7 @@ import (
 type Project struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
-	UserID    uuid.UUID `json:"user_id"`
+	UserID    uuid.UUID `json:"userId"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

@@ -5,7 +5,7 @@ Authorization: Bearer {{user_access_token}}
 
 {
   "name": "{{user_task1_name}}",
-  "projectID": "{{user_project1_id}}"
+  "projectId": "{{user_project1_id}}"
 }
 
 > {%
@@ -21,7 +21,7 @@ Authorization: Bearer {{user_access_token}}
 {
   "id": "{{user_task1_id}}",
   "name": "User1 task1 RENAMED",
-  "projectID": "{{user_project1_id}}"
+  "projectId": "{{user_project1_id}}"
 }
 
 ### Get task 1
@@ -37,7 +37,7 @@ Authorization: Bearer {{user_access_token}}
 
 {
   "name": "{{user_task2_name}}",
-  "projectID": "{{user_project1_id}}"
+  "projectId": "{{user_project1_id}}"
 }
 
 > {%
@@ -52,7 +52,7 @@ Authorization: Bearer {{user_access_token}}
 
 {
   "name": "{{user_task3_name}}",
-  "projectID": "{{user_project1_id}}"
+  "projectId": "{{user_project1_id}}"
 }
 
 > {%
@@ -68,7 +68,7 @@ Authorization: Bearer {{user_access_token}}
 
 {
   "name": "{{user_task4_name}}",
-  "projectID": "{{user_project1_id}}"
+  "projectId": "{{user_project1_id}}"
 }
 
 > {%
@@ -89,7 +89,7 @@ Authorization: Bearer {{user_access_token}}
 {
   "id": "{{user_task2_id}}",
   "name": "{{user_task2_name}}",
-  "projectID": "{{user_project2_id}}"
+  "projectId": "{{user_project2_id}}"
 }
 
 ### List project tasks

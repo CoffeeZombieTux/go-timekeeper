@@ -8,10 +8,10 @@ import (
 
 // TimeRecordReportRow represents a row in the time record report.
 type TimeRecordReportRow struct {
-	ID           uuid.UUID
-	ProjectID    uuid.UUID
-	TaskID       uuid.UUID
-	WorkDate     time.Time
-	WorkTimezone string
-	TotalMinutes int
+	ID           uuid.UUID `json:"id"`
+	ProjectID    uuid.UUID `json:"projectId"`
+	TaskID       uuid.UUID `json:"taskId"`
+	WorkDate     time.Time `json:"workDate"`
+	WorkTimezone string    `json:"workTimezone"`
+	TotalMinutes int       `json:"totalMinutes"`
 }

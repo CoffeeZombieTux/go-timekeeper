@@ -19,12 +19,12 @@ const (
 // Task represents a task entity in the database.
 type Task struct {
 	ID        uuid.UUID  `json:"id"`
-	UserID    uuid.UUID  `json:"user_id"`
-	ProjectID uuid.UUID  `json:"project_id"`
+	UserID    uuid.UUID  `json:"userId"`
+	ProjectID uuid.UUID  `json:"projectId"`
 	Name      string     `json:"name"`
 	Status    TaskStatus `json:"status"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
 }
 
 // IsValidTaskStatus checks if the provided status is valid.

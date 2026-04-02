@@ -67,14 +67,14 @@ type UpdateProjectRequest struct {
 
 // CreateTaskRequest represents the request body for creating a new task.
 type CreateTaskRequest struct {
-	ProjectID uuid.UUID `json:"projectID" binding:"required"`
+	ProjectID uuid.UUID `json:"projectId" binding:"required"`
 	Name      string    `json:"name" binding:"required"`
 }
 
 // UpdateTaskRequest represents the request body for updating a task.
 type UpdateTaskRequest struct {
 	ID        uuid.UUID `json:"id" binding:"required"`
-	ProjectID uuid.UUID `json:"projectID" binding:"required"`
+	ProjectID uuid.UUID `json:"projectId" binding:"required"`
 	Name      string    `json:"name" binding:"required"`
 }
 
@@ -144,21 +144,21 @@ type GeneralReportRequest struct {
 
 // ProjectReportRequest represents the request body for generating a report
 type ProjectReportRequest struct {
-	ProjectID uuid.UUID        `json:"projectID" binding:"required"`
+	ProjectID uuid.UUID        `json:"projectId" binding:"required"`
 	Tasks     *[]uuid.UUID     `json:"tasks"`
 	TimeRange *TimeRangeParams `json:"timeRange" binding:"required"`
 }
 
 // TaskReportRequest represents the request body for generating a report
 type TaskReportRequest struct {
-	TaskID    uuid.UUID        `json:"taskID" binding:"required"`
+	TaskID    uuid.UUID        `json:"taskId" binding:"required"`
 	TimeRange *TimeRangeParams `json:"timeRange" binding:"required"`
 }
 
 // CreateTimeRecordRequest represents the request body for creating a new time record
 type CreateTimeRecordRequest struct {
-	ProjectID    uuid.UUID `json:"projectID" binding:"required"`
-	TaskID       uuid.UUID `json:"taskID" binding:"required"`
+	ProjectID    uuid.UUID `json:"projectId" binding:"required"`
+	TaskID       uuid.UUID `json:"taskId" binding:"required"`
 	WorkDate     time.Time `json:"workDate" binding:"required"`
 	WorkTimezone string    `json:"workTimezone" binding:"required"`
 	StartTime    time.Time `json:"startTime" binding:"required"`
@@ -168,8 +168,8 @@ type CreateTimeRecordRequest struct {
 // UpdateTimeRecordRequest represents the request body for updating a time record
 type UpdateTimeRecordRequest struct {
 	ID           uuid.UUID `json:"id" binding:"required"`
-	ProjectID    uuid.UUID `json:"projectID" binding:"required"`
-	TaskID       uuid.UUID `json:"taskID" binding:"required"`
+	ProjectID    uuid.UUID `json:"projectId" binding:"required"`
+	TaskID       uuid.UUID `json:"taskId" binding:"required"`
 	WorkDate     time.Time `json:"workDate" binding:"required"`
 	WorkTimezone string    `json:"workTimezone" binding:"required"`
 	StartTime    time.Time `json:"startTime" binding:"required"`

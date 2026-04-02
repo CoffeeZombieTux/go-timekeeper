@@ -146,13 +146,13 @@ Errors:
   "message": "Validation failed",
   "error": {
     "code": "VALIDATION_ERROR",
-    "request_id": "..."
+    "requestId": "..."
   }
 }
 ```
 
 ## Notes
 
-- `work_date` is stored as `DATE`, while session boundaries are `TIMESTAMPTZ`.
+- `workDate` is stored in DB as `work_date` (`DATE`), while session boundaries are `TIMESTAMPTZ`.
 - Active session conflicts are validated against manual time records for the same task/day.
 - Repository + service layers are separated, and transactions are coordinated via unit-of-work.
