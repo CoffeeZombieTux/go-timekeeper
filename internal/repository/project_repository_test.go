@@ -50,7 +50,7 @@ func TestProjectRepository_CRUD(t *testing.T) {
 		t.Fatalf("update Save: %v", err)
 	}
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM project WHERE id = $1`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, user_id, created_at, updated_at FROM project WHERE id = $1`)).
 		WithArgs(projectID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "user_id", "created_at", "updated_at"}).
 			AddRow(projectID, "p2", userID, now, now))
@@ -58,7 +58,7 @@ func TestProjectRepository_CRUD(t *testing.T) {
 		t.Fatalf("Get: %v", err)
 	}
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM project WHERE user_id = $1`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, user_id, created_at, updated_at FROM project WHERE user_id = $1`)).
 		WithArgs(userID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "user_id", "created_at", "updated_at"}).
 			AddRow(projectID, "p2", userID, now, now))

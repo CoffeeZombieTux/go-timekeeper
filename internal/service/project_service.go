@@ -117,6 +117,6 @@ func checkProjectUserAccess(userId uuid.UUID, project model.Project) error {
 	return apperror.New(
 		apperror.CodeUnauthorizedCode,
 		apperror.CodeUnauthorizedMessage,
-		"User not authenticated",
+		"Access denied",
 	)
 }

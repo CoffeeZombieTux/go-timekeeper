@@ -67,11 +67,11 @@ func TestReportService_ProjectAndTaskReports(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "project_id", "task_id", "work_date", "work_timezone", "total_minutes"}).
 			AddRow(uuid.New(), projectID, taskID, workDate, "Europe/Prague", 30).
 			AddRow(uuid.New(), projectID, taskID, workDate, "Europe/Prague", 45))
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM task WHERE id = $1`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = $1`)).
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}).
 			AddRow(taskID, userID, projectID, "Task 1", "CREATED", workDate, workDate))
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM project WHERE id = $1`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, user_id, created_at, updated_at FROM project WHERE id = $1`)).
 		WithArgs(projectID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "user_id", "created_at", "updated_at"}).
 			AddRow(projectID, "Project 1", userID, workDate, workDate))
@@ -91,7 +91,7 @@ func TestReportService_ProjectAndTaskReports(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "project_id", "task_id", "work_date", "work_timezone", "total_minutes"}).
 			AddRow(uuid.New(), projectID, taskID, workDate, "Europe/Prague", 15).
 			AddRow(uuid.New(), projectID, taskID, workDate, "Europe/Prague", 20))
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM task WHERE id = $1`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = $1`)).
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}).
 			AddRow(taskID, userID, projectID, "Task 1", "CREATED", workDate, workDate))

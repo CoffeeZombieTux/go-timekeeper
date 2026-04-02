@@ -59,7 +59,7 @@ func TestTaskRepository_Flow(t *testing.T) {
 		t.Fatalf("Save update: %v", err)
 	}
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM task WHERE id = $1`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = $1`)).
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}).
 			AddRow(taskID, userID, projectID, "task-2", model.StatusCreated, now, now))
@@ -68,7 +68,7 @@ func TestTaskRepository_Flow(t *testing.T) {
 	}
 
 	isActive := true
-	mock.ExpectQuery(`SELECT \* FROM task WHERE project_id = \$1 AND user_id = \$2 AND status IN \(\$3, \$4\) LIMIT \$5 OFFSET \$6`).
+	mock.ExpectQuery(`SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE project_id = \$1 AND user_id = \$2 AND status IN \(\$3, \$4\) LIMIT \$5 OFFSET \$6`).
 		WithArgs(projectID, userID, model.StatusCreated, model.StatusWorkingOn, 10, 0).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}).
 			AddRow(taskID, userID, projectID, "task-2", model.StatusCreated, now, now))
@@ -97,7 +97,7 @@ func TestTaskRepository_Flow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Begin: %v", err)
 	}
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM task WHERE id = $1 FOR UPDATE`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = $1 FOR UPDATE`)).
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}).
 			AddRow(taskID, userID, projectID, "task-2", model.StatusCreated, now, now))

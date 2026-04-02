@@ -170,7 +170,7 @@ func TestTaskService_Flow_StartStopCloseDelete(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT \\* FROM task WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = \\$1 FOR UPDATE").
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows(taskCols).
 			AddRow(taskID, userID, projectID, "task-flow", model.StatusCreated, createdAt, createdAt))
@@ -218,7 +218,7 @@ func TestTaskService_Flow_StartStopCloseDelete(t *testing.T) {
 	closedAt := time.Now().UTC().Add(-5 * time.Minute)
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT \\* FROM task WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = \\$1 FOR UPDATE").
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows(taskCols).
 			AddRow(taskID, userID, projectID, "task-flow", model.StatusWorkingOn, createdAt, createdAt))
@@ -275,7 +275,7 @@ func TestTaskService_Flow_StartStopCloseDelete(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT \\* FROM task WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = \\$1 FOR UPDATE").
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows(taskCols).
 			AddRow(taskID, userID, projectID, "task-flow", model.StatusCreated, createdAt, createdAt))
@@ -290,7 +290,7 @@ func TestTaskService_Flow_StartStopCloseDelete(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT \\* FROM task WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = \\$1 FOR UPDATE").
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows(taskCols).
 			AddRow(taskID, userID, projectID, "task-flow", model.StatusClosed, createdAt, createdAt))
@@ -337,7 +337,7 @@ func TestTaskService_Update_PropagatesProjectToTimeRecords(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT \\* FROM task WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = \\$1 FOR UPDATE").
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows(taskCols).
 			AddRow(taskID, userID, oldProjectID, "task", model.StatusCreated, createdAt, createdAt))
@@ -425,7 +425,7 @@ func TestTaskService_Start_InvalidStatus_BreakLogic(t *testing.T) {
 	svc := NewTaskService(taskRepo, timeRecordRepo, &fakeTaskTimeRecordService{}, uow.NewUnitOfWorkManager(db))
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT \\* FROM task WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = \\$1 FOR UPDATE").
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}).
 			AddRow(taskID, userID, projectID, "closed-task", model.StatusClosed, createdAt, createdAt))
@@ -464,7 +464,7 @@ func TestTaskService_Get_Unauthorized(t *testing.T) {
 	timeRecordRepo := repository.NewTimeRecordRepository(db, log)
 	svc := NewTaskService(taskRepo, timeRecordRepo, &fakeTaskTimeRecordService{}, uow.NewUnitOfWorkManager(db))
 
-	mock.ExpectQuery("SELECT \\* FROM task WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = \\$1").
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}).
 			AddRow(taskID, taskOwnerID, projectID, "foreign", model.StatusCreated, createdAt, createdAt))
@@ -498,7 +498,7 @@ func TestTaskService_GetByProject_OutOfRange_BreakLogic(t *testing.T) {
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM task WHERE project_id = \\$1 AND user_id = \\$2").
 		WithArgs(projectID, userID).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-	mock.ExpectQuery("SELECT \\* FROM task WHERE project_id = \\$1 AND user_id = \\$2 LIMIT \\$3 OFFSET \\$4").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE project_id = \\$1 AND user_id = \\$2 LIMIT \\$3 OFFSET \\$4").
 		WithArgs(projectID, userID, 10, 30).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}))
 
@@ -533,7 +533,7 @@ func TestTaskService_Update_Unauthorized(t *testing.T) {
 	svc := NewTaskService(taskRepo, timeRecordRepo, &fakeTaskTimeRecordService{}, uow.NewUnitOfWorkManager(db))
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT \\* FROM task WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = \\$1 FOR UPDATE").
 		WithArgs(taskID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "project_id", "name", "status", "created_at", "updated_at"}).
 			AddRow(taskID, taskOwnerID, oldProjectID, "foreign", model.StatusCreated, createdAt, createdAt))

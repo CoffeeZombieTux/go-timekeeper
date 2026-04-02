@@ -34,7 +34,7 @@ func NewUserRepository(db *sql.DB, logger *logger.Logger) UserRepositoryInterfac
 
 // GetById returns a user by ID.
 func (userRepo *UserRepository) GetById(ctx context.Context, id uuid.UUID) (*model.User, error) {
-	query := `SELECT * FROM "user" WHERE id = $1`
+	query := `SELECT id, email, password_hash, created_at, updated_at FROM "user" WHERE id = $1`
 
 	var user model.User
 	err := userRepo.db.QueryRowContext(
@@ -51,7 +51,7 @@ func (userRepo *UserRepository) GetById(ctx context.Context, id uuid.UUID) (*mod
 
 // GetByEmail returns a user by email.
 func (userRepo *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
-	query := `SELECT * FROM "user" WHERE email = $1`
+	query := `SELECT id, email, password_hash, created_at, updated_at FROM "user" WHERE email = $1`
 
 	var user model.User
 	err := userRepo.db.QueryRowContext(

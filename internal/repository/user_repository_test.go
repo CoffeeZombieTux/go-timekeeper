@@ -38,7 +38,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 		t.Fatalf("unexpected user id %s", created.ID)
 	}
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "user" WHERE id = $1`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, email, password_hash, created_at, updated_at FROM "user" WHERE id = $1`)).
 		WithArgs(userID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password_hash", "created_at", "updated_at"}).
 			AddRow(userID, "u@example.com", "hash", now, now))
@@ -46,7 +46,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 		t.Fatalf("GetById: %v", err)
 	}
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "user" WHERE email = $1`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, email, password_hash, created_at, updated_at FROM "user" WHERE email = $1`)).
 		WithArgs("u@example.com").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password_hash", "created_at", "updated_at"}).
 			AddRow(userID, "u@example.com", "hash", now, now))

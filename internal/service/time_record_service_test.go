@@ -571,3 +571,69 @@ func TestDeleteTimeRecord_Success(t *testing.T) {
 		t.Fatal("expected Delete repository method to be called")
 	}
 }
+
+func TestUpdateTimeRecord_RecalculatesTotalMinutes(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New: %v", err)
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	recordID := uuid.New()
+	projectID := uuid.New()
+	taskID := uuid.New()
+	ctx := contextWithAuthenticatedUser(t, userID)
+
+	var capturedMinutes *int
+	repo := &fakeTimeRecordRepo{
+		getForUpdateFn: func(ctx context.Context, id uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error) {
+			oldMinutes := 30
+			return &model.TimeRecord{
+				ID:           id,
+				UserID:       userID,
+				ProjectID:    projectID,
+				TaskID:       taskID,
+				WorkDate:     time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+				Timezone:     "Europe/Prague",
+				StartedAt:    time.Date(2026, 3, 31, 8, 0, 0, 0, time.UTC),
+				EndedAt:      ptrTime(time.Date(2026, 3, 31, 8, 30, 0, 0, time.UTC)),
+				TotalMinutes: &oldMinutes,
+			}, nil
+		},
+		updateFn: func(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) (*model.TimeRecord, error) {
+			capturedMinutes = rec.TotalMinutes
+			return rec, nil
+		},
+	}
+	svc := &TimeRecordService{
+		timeRecordRepo: repo,
+		uowManager:     uow.NewUnitOfWorkManager(db),
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectCommit()
+
+	start := time.Date(2026, 3, 31, 9, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 31, 11, 0, 0, 0, time.UTC) // 120 minutes
+	_, err = svc.UpdateTimeRecord(ctx, &apimodel.UpdateTimeRecordRequest{
+		ID:           recordID,
+		ProjectID:    projectID,
+		TaskID:       taskID,
+		WorkDate:     time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+		WorkTimezone: "Europe/Prague",
+		StartTime:    start,
+		EndTime:      end,
+	})
+	if err != nil {
+		t.Fatalf("UpdateTimeRecord failed: %v", err)
+	}
+	if capturedMinutes == nil {
+		t.Fatal("expected TotalMinutes to be set")
+	}
+	if *capturedMinutes != 120 {
+		t.Fatalf("expected TotalMinutes=120, got %d", *capturedMinutes)
+	}
+}
+
+func ptrTime(t time.Time) *time.Time { return &t }

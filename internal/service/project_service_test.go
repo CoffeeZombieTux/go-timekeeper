@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"go-timekeeper/internal/apperror"
 	"go-timekeeper/internal/auth"
 	"go-timekeeper/internal/middleware"
 	"go-timekeeper/internal/model"
@@ -134,5 +135,24 @@ func TestProjectService_CRUDFlow(t *testing.T) {
 
 	if err := svc.Delete(ctx, created.ID); err != nil {
 		t.Fatalf("delete failed: %v", err)
+	}
+}
+
+func TestCheckProjectUserAccess(t *testing.T) {
+	userID := uuid.New()
+	if err := checkProjectUserAccess(userID, model.Project{UserID: userID}); err != nil {
+		t.Fatalf("expected nil for same user, got %v", err)
+	}
+
+	err := checkProjectUserAccess(uuid.New(), model.Project{UserID: userID})
+	if err == nil {
+		t.Fatal("expected unauthorized error for different user")
+	}
+	appErr, ok := apperror.As(err)
+	if !ok || appErr.Code != apperror.CodeUnauthorizedCode {
+		t.Fatalf("expected unauthorized error, got %v", err)
+	}
+	if len(appErr.Details) == 0 || appErr.Details[0] != "Access denied" {
+		t.Fatalf("expected 'Access denied' detail, got %v", appErr.Details)
 	}
 }

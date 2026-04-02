@@ -278,7 +278,7 @@ func (taskService *TaskService) Close(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-// checkUserAccess checks if the user is allowed to access the task.
+// checkTaskUserAccess checks if the user is allowed to access the task.
 func checkTaskUserAccess(userId uuid.UUID, task model.Task) error {
 	if userId == task.UserID {
 		return nil
@@ -286,7 +286,7 @@ func checkTaskUserAccess(userId uuid.UUID, task model.Task) error {
 	return apperror.New(
 		apperror.CodeUnauthorizedCode,
 		apperror.CodeUnauthorizedMessage,
-		"User not authenticated",
+		"Access denied",
 	)
 }
 

@@ -89,7 +89,7 @@ func (timeRecordService *TimeRecordService) StartTask(
 	if _, err = timeRecordService.timeRecordRepo.Create(ctx, &rec, tx); err != nil {
 		return err
 	}
-	return err
+	return nil
 }
 
 // StopTask stops a task.
@@ -315,6 +315,8 @@ func (timeRecordService *TimeRecordService) UpdateTimeRecord(
 		timeRecord.Timezone = req.WorkTimezone
 		timeRecord.StartedAt = req.StartTime
 		timeRecord.EndedAt = &req.EndTime
+		minutes := durationToMinutes(endLocal.Sub(startLocal))
+		timeRecord.TotalMinutes = &minutes
 		if err = timeRecordService.validateTimeRecordsConflict(ctx, userId, req.TaskID, *timeRecord); err != nil {
 			return err
 		}
@@ -508,7 +510,7 @@ func getLocation(timezone string) (*time.Location, error) {
 	return loc, nil
 }
 
-// checkTimeRecordUserAccess checks if the user is allowed to access the task.
+// checkTimeRecordUserAccess checks if the user is allowed to access the time record.
 func checkTimeRecordUserAccess(userId uuid.UUID, timeRecord model.TimeRecord) error {
 	if userId == timeRecord.UserID {
 		return nil
@@ -516,6 +518,6 @@ func checkTimeRecordUserAccess(userId uuid.UUID, timeRecord model.TimeRecord) er
 	return apperror.New(
 		apperror.CodeUnauthorizedCode,
 		apperror.CodeUnauthorizedMessage,
-		"User not authenticated",
+		"Access denied",
 	)
 }

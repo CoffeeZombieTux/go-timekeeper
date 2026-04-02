@@ -73,7 +73,7 @@ func (projectRepo ProjectRepository) Save(ctx context.Context, project *model.Pr
 
 // Get gets a project by ID.
 func (projectRepo ProjectRepository) Get(ctx context.Context, id uuid.UUID) (*model.Project, error) {
-	query := `SELECT * FROM project WHERE id = $1`
+	query := `SELECT id, name, user_id, created_at, updated_at FROM project WHERE id = $1`
 	var project model.Project
 	err := projectRepo.db.QueryRowContext(
 		ctx,
@@ -88,7 +88,7 @@ func (projectRepo ProjectRepository) Get(ctx context.Context, id uuid.UUID) (*mo
 
 // GetUserProjects gets all projects for a user.
 func (projectRepo ProjectRepository) GetUserProjects(ctx context.Context, userID uuid.UUID) ([]*model.Project, error) {
-	query := `SELECT * FROM project WHERE user_id = $1`
+	query := `SELECT id, name, user_id, created_at, updated_at FROM project WHERE user_id = $1`
 	rows, err := projectRepo.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err

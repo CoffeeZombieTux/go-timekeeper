@@ -31,7 +31,6 @@ type TaskRepositoryInterface interface {
 		isActive *bool,
 	) (int, error)
 	Delete(ctx context.Context, task *model.Task, unit *uow.UnitOfWork) error
-	getExecutor(unit *uow.UnitOfWork) (SQLExecutor, bool)
 }
 
 // TaskRepository represents a task repository.
@@ -93,7 +92,7 @@ func (taskRepo TaskRepository) Save(ctx context.Context, task *model.Task, unit 
 // Get gets a task by ID.
 func (taskRepo TaskRepository) Get(ctx context.Context, id uuid.UUID, unit *uow.UnitOfWork) (*model.Task, error) {
 	exec, isTx := taskRepo.getExecutor(unit)
-	query := `SELECT * FROM task WHERE id = $1`
+	query := `SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE id = $1`
 	if isTx {
 		query += ` FOR UPDATE`
 	}
@@ -118,7 +117,7 @@ func (taskRepo TaskRepository) GetByProjectAndUserId(
 	limit,
 	offset int,
 ) ([]*model.Task, error) {
-	query := `SELECT * FROM task WHERE project_id = $1 AND user_id = $2`
+	query := `SELECT id, user_id, project_id, name, status, created_at, updated_at FROM task WHERE project_id = $1 AND user_id = $2`
 	args := []any{projectID, userID}
 
 	if isActive != nil {
