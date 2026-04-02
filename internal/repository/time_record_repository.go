@@ -228,8 +228,6 @@ func (timeRecordRepo *TimeRecordRepository) GetListByTaskForUpdate(
 		); err != nil {
 			return nil, err
 		}
-		row.EndedAt = endedAt
-		row.TotalMinutes = totalMinutes
 		result = append(result, &row)
 	}
 

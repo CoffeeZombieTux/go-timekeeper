@@ -222,12 +222,11 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 	if err = timeRecordService.validateTimeRecordsConflict(ctx, userId, req.TaskID, *timeRecord); err != nil {
 		return nil, err
 	}
-
-	if err = uow.WithUnitOfWork(ctx, timeRecordService.uowManager, func(unit *uow.UnitOfWork) error {
-		tx := unit.GetTransaction()
-		timeRecord, err = timeRecordService.timeRecordRepo.Create(ctx, timeRecord, tx)
+	err = uow.WithUnitOfWork(ctx, timeRecordService.uowManager, func(unit *uow.UnitOfWork) error {
+		timeRecord, err = timeRecordService.timeRecordRepo.Create(ctx, timeRecord, unit.GetTransaction())
 		return err
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 	return timeRecord, nil
