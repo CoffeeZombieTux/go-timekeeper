@@ -126,6 +126,19 @@ The app container uses `air` for live reload (`.air.toml`) and Delve for debuggi
   - `postman/GoTimekeeper.postman_collection.json`
   - `postman/GoTimekeeper.local.postman_environment.json`
 
+## Demo Client
+
+A simple local demo UI is available in `demo-client/`.
+
+Run it with:
+
+```bash
+cd demo-client
+go run ./server.go
+```
+
+Then open `http://localhost:5173` while backend is running.
+
 ## Response Envelope
 
 All responses use a common envelope:
