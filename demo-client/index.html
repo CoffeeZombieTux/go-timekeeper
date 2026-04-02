@@ -3,132 +3,210 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GoTimekeeper Demo Client</title>
+  <title>GoTimekeeper Local Client</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<main class="container">
-  <header class="header">
-    <h1>GoTimekeeper Demo Client</h1>
-    <p>Simple local UI to demonstrate all backend endpoints.</p>
+<main class="app-shell">
+  <header class="hero">
+    <h1>GoTimekeeper Local Client</h1>
+    <p>Run the Go API, open this page, and manage your daily time-tracking flow end-to-end.</p>
+    <div class="hero-meta">
+      <span id="authBadge" class="badge badge-muted">Not authenticated</span>
+      <span id="selectedBadge" class="badge badge-muted">No project selected</span>
+    </div>
   </header>
 
-  <section class="card">
-    <h2>Config & Demo Data</h2>
-    <div class="grid">
-      <label>Base URL<input id="baseUrl" type="text"></label>
-      <label>Timezone<input id="timezone" type="text"></label>
-      <label>Email<input id="email" type="text"></label>
-      <label>Password<input id="password" type="text"></label>
-      <label>New Password<input id="newPassword" type="text"></label>
-      <label>Access Token<input id="accessToken" type="text"></label>
-      <label>Refresh Token<input id="refreshToken" type="text"></label>
-      <label>User ID<input id="userId" type="text"></label>
-      <label>Project ID<input id="projectId" type="text"></label>
-      <label>Project Name<input id="projectName" type="text"></label>
-      <label>Task ID<input id="taskId" type="text"></label>
-      <label>Task Name<input id="taskName" type="text"></label>
-      <label>Time Record ID<input id="timeRecordId" type="text"></label>
-      <label>Work Date (RFC3339)<input id="workDate" type="text"></label>
-      <label>Start Time (RFC3339)<input id="startTime" type="text"></label>
-      <label>End Time (RFC3339)<input id="endTime" type="text"></label>
-      <label>Report From Date (RFC3339)<input id="reportFromDate" type="text"></label>
-      <label>Report To Date (RFC3339)<input id="reportToDate" type="text"></label>
-      <label>Project IDs CSV (general report)<input id="projectIdsCsv" type="text"></label>
-      <label>Task IDs CSV (project report)<input id="taskIdsCsv" type="text"></label>
-      <label>Task List Limit<input id="taskListLimit" type="number"></label>
-      <label>Task List Offset<input id="taskListOffset" type="number"></label>
-      <label>Task List isActive
-        <select id="taskListIsActive">
-          <option value="">(all)</option>
-          <option value="1">1 (active)</option>
-          <option value="0">0 (closed)</option>
-        </select>
+  <section class="layout-two">
+    <article class="panel">
+      <h2>Connection</h2>
+      <div class="field-grid">
+        <label>
+          API Base URL
+          <input id="baseUrl" type="text" autocomplete="off">
+        </label>
+        <label>
+          Timezone
+          <input id="timezone" type="text" autocomplete="off">
+        </label>
+      </div>
+      <div class="action-row">
+        <button id="pingBtn" data-busy="1">Ping</button>
+        <button id="syncBtn" data-busy="1" class="btn-secondary">Sync Data</button>
+        <button id="resetBtn" data-busy="1" class="btn-ghost">Reset Local State</button>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Auth</h2>
+      <div class="field-grid">
+        <label>
+          Email
+          <input id="email" type="email" autocomplete="username">
+        </label>
+        <label>
+          Password
+          <input id="password" type="password" autocomplete="current-password">
+        </label>
+        <label>
+          New Password
+          <input id="newPassword" type="password" autocomplete="new-password">
+        </label>
+        <label>
+          Access Token
+          <input id="accessToken" type="text" autocomplete="off">
+        </label>
+        <label>
+          Refresh Token
+          <input id="refreshToken" type="text" autocomplete="off">
+        </label>
+      </div>
+      <div class="action-row">
+        <button id="registerBtn" data-busy="1">Register</button>
+        <button id="loginBtn" data-busy="1">Login</button>
+        <button id="refreshBtn" data-busy="1" class="btn-secondary">Refresh Token</button>
+        <button id="meBtn" data-busy="1" class="btn-secondary">Get Me</button>
+        <button id="changePasswordBtn" data-busy="1" class="btn-secondary">Change Password</button>
+        <button id="logoutBtn" data-busy="1" class="btn-ghost">Logout</button>
+      </div>
+    </article>
+  </section>
+
+  <section class="layout-main">
+    <article class="panel">
+      <div class="panel-head">
+        <h2>Projects</h2>
+        <span id="projectCount" class="mono">0</span>
+      </div>
+      <label>
+        Project Name
+        <input id="projectName" type="text" autocomplete="off">
       </label>
+      <div class="action-row">
+        <button id="createProjectBtn" data-busy="1">Create</button>
+        <button id="updateProjectBtn" data-busy="1" class="btn-secondary">Rename</button>
+        <button id="deleteProjectBtn" data-busy="1" class="btn-ghost">Delete</button>
+        <button id="refreshProjectsBtn" data-busy="1" class="btn-secondary">Refresh</button>
+      </div>
+      <ul id="projectList" class="entity-list"></ul>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <h2>Tasks</h2>
+        <span id="taskCount" class="mono">0</span>
+      </div>
+      <div class="field-grid field-grid-compact">
+        <label>
+          Task Name
+          <input id="taskName" type="text" autocomplete="off">
+        </label>
+        <label>
+          Status Filter
+          <select id="taskListIsActive">
+            <option value="">All</option>
+            <option value="1">Active (CREATED + WORKING_ON)</option>
+            <option value="0">Closed</option>
+          </select>
+        </label>
+      </div>
+      <div class="action-row">
+        <button id="createTaskBtn" data-busy="1">Create</button>
+        <button id="updateTaskBtn" data-busy="1" class="btn-secondary">Update</button>
+        <button id="deleteTaskBtn" data-busy="1" class="btn-ghost">Delete</button>
+        <button id="refreshTasksBtn" data-busy="1" class="btn-secondary">Refresh</button>
+      </div>
+      <div class="action-row">
+        <button id="startTaskBtn" data-busy="1">Start</button>
+        <button id="stopTaskBtn" data-busy="1" class="btn-secondary">Stop</button>
+        <button id="closeTaskBtn" data-busy="1" class="btn-ghost">Close</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+          <tr>
+            <th>Task</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th></th>
+          </tr>
+          </thead>
+          <tbody id="taskTableBody"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <section class="layout-two">
+    <article class="panel">
+      <h2>Manual Session</h2>
+      <div class="field-grid">
+        <label>
+          Time Record ID (for update/delete)
+          <input id="timeRecordId" type="text" autocomplete="off">
+        </label>
+        <label>
+          Start
+          <input id="startTimeLocal" type="datetime-local">
+        </label>
+        <label>
+          End
+          <input id="endTimeLocal" type="datetime-local">
+        </label>
+      </div>
+      <p class="helper-text">
+        Uses selected project/task and timezone.
+      </p>
+      <div class="action-row">
+        <button id="createTimeRecordBtn" data-busy="1">Create Session</button>
+        <button id="updateTimeRecordBtn" data-busy="1" class="btn-secondary">Update Session</button>
+        <button id="deleteTimeRecordBtn" data-busy="1" class="btn-ghost">Delete Session</button>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Reports</h2>
+      <div class="field-grid">
+        <label>
+          From Date
+          <input id="reportFromDate" type="date">
+        </label>
+        <label>
+          To Date
+          <input id="reportToDate" type="date">
+        </label>
+      </div>
+      <div class="action-row">
+        <button id="generalReportBtn" data-busy="1">General</button>
+        <button id="projectReportBtn" data-busy="1" class="btn-secondary">Project</button>
+        <button id="taskReportBtn" data-busy="1" class="btn-secondary">Task</button>
+      </div>
+      <div id="reportSummary" class="report-summary"></div>
+      <details>
+        <summary>Raw Report JSON</summary>
+        <pre id="reportJson">No report loaded.</pre>
+      </details>
+    </article>
+  </section>
+
+  <section class="panel">
+    <h2>API Trace</h2>
+    <div class="layout-two">
+      <div>
+        <h3>Last Request</h3>
+        <pre id="lastRequest">No requests yet.</pre>
+      </div>
+      <div>
+        <h3>Last Response</h3>
+        <pre id="lastResponse">No responses yet.</pre>
+      </div>
     </div>
-    <div class="actions">
-      <button id="saveStateBtn">Save State</button>
-      <button id="resetStateBtn">Reset Demo Values</button>
-    </div>
   </section>
 
-  <section class="card">
-    <h2>Health</h2>
-    <div class="actions">
-      <button data-action="ping">Ping</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Auth & User</h2>
-    <div class="actions">
-      <button data-action="register">Register</button>
-      <button data-action="login">Login</button>
-      <button data-action="refresh">Refresh</button>
-      <button data-action="logout">Logout</button>
-      <button data-action="me">Get Me</button>
-      <button data-action="changePassword">Change Password</button>
-      <button data-action="deleteMe">Delete Me</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Projects</h2>
-    <div class="actions">
-      <button data-action="createProject">Create Project</button>
-      <button data-action="getProject">Get Project</button>
-      <button data-action="listProjects">List Projects</button>
-      <button data-action="updateProject">Update Project</button>
-      <button data-action="deleteProject">Delete Project</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Tasks</h2>
-    <div class="actions">
-      <button data-action="createTask">Create Task</button>
-      <button data-action="getTask">Get Task</button>
-      <button data-action="listProjectTasks">List Project Tasks</button>
-      <button data-action="updateTask">Update Task</button>
-      <button data-action="deleteTask">Delete Task</button>
-      <button data-action="startTask">Start Task</button>
-      <button data-action="stopTask">Stop Task</button>
-      <button data-action="closeTask">Close Task</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Time Records (Manual Sessions)</h2>
-    <div class="actions">
-      <button data-action="createTimeRecord">Create Time Record</button>
-      <button data-action="updateTimeRecord">Update Time Record</button>
-      <button data-action="deleteTimeRecord">Delete Time Record</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Reports</h2>
-    <div class="actions">
-      <button data-action="generalReport">General Report</button>
-      <button data-action="projectReport">Project Report</button>
-      <button data-action="taskReport">Task Report</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Last Request</h2>
-    <pre id="lastRequest"></pre>
-  </section>
-
-  <section class="card">
-    <h2>Last Response</h2>
-    <pre id="lastResponse"></pre>
-  </section>
-
-  <section class="card">
-    <h2>Status</h2>
-    <p id="statusLine">Ready.</p>
-  </section>
+  <footer class="status-line" id="statusLine">Ready.</footer>
 </main>
 
 <script src="./app.js"></script>

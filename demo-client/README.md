@@ -1,23 +1,30 @@
-# GoTimekeeper Demo Client
+# GoTimekeeper Local Frontend Client
 
-Simple local UI for demonstrating the backend API.
+Local browser client for using the GoTimekeeper API from one dashboard.
 
-This is intentionally demo-grade. It is designed for local usage, not production.
+## Features
 
-## What it covers
-
-- Health: `/ping`
-- Auth: register, login, refresh, logout, change password
-- User: get me, delete me
-- Projects: create, get, list, update, delete
-- Tasks: create, get, list by project, update, delete, start, stop, close
-- Time records (sessions): create, update, delete
-- Reports: general, project, task
+- Connection panel with API `ping`, base URL, timezone, and data sync
+- Auth workflow: register, login, token refresh, logout, get profile, change password
+- Project workspace: create, rename, delete, select
+- Task board for selected project: create/update/delete/start/stop/close and status filtering
+- Manual session form (create/update/delete time records)
+- Reports with date range:
+  - General report (optionally scoped to selected project)
+  - Project report (selected project)
+  - Task report (selected task)
+- API trace panel showing last request + response payloads
+- Local persistence (tokens, selected IDs, form values) via `localStorage`
 
 ## Run locally
 
-1. Start backend (`http://localhost:8080` by default).
-2. From repo root, serve this folder:
+1. Start the API server (default `http://localhost:8080`):
+
+```bash
+go run ./cmd/api
+```
+
+2. In a new terminal, run the static frontend server:
 
 ```bash
 cd demo-client
@@ -25,14 +32,11 @@ go run ./server.go
 ```
 
 3. Open `http://localhost:5173`.
-4. Keep `Base URL` as `http://localhost:8080` (or change it if your backend runs elsewhere).
 
-## Usage flow (recommended)
+## Recommended first flow
 
-1. `Register` or `Login`
-2. `Create Project`
-3. `Create Task`
-4. `Start Task` / `Stop Task` or use `Create Time Record`
-5. Run report endpoints
-
-The page stores values in `localStorage`, so IDs and tokens survive reloads.
+1. Register or login.
+2. Create/select a project.
+3. Create/select a task.
+4. Start/stop task timer or add a manual session.
+5. Run reports for a date range.
