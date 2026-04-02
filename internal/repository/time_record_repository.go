@@ -240,9 +240,18 @@ func (timeRecordRepo *TimeRecordRepository) Create(
 			created_at, updated_at
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-		RETURNING id
+		RETURNING
+			id, user_id, project_id, task_id,
+			work_date, work_timezone, started_at, ended_at, total_minutes,
+			created_at, updated_at
 	`
-	err := tx.QueryRowContext(
+	queryRow := timeRecordRepo.db.QueryRowContext
+	if tx != nil {
+		queryRow = tx.QueryRowContext
+	}
+	var endedAt *time.Time
+	var totalMinutes *int
+	err := queryRow(
 		ctx,
 		q,
 		uuid.New(),
@@ -254,10 +263,24 @@ func (timeRecordRepo *TimeRecordRepository) Create(
 		rec.StartedAt,
 		rec.EndedAt,
 		rec.TotalMinutes,
-	).Scan(&rec.ProjectID)
+	).Scan(
+		&rec.ID,
+		&rec.UserID,
+		&rec.ProjectID,
+		&rec.TaskID,
+		&rec.WorkDate,
+		&rec.Timezone,
+		&rec.StartedAt,
+		&endedAt,
+		&totalMinutes,
+		&rec.CreatedAt,
+		&rec.UpdatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
+	rec.EndedAt = endedAt
+	rec.TotalMinutes = totalMinutes
 	return rec, nil
 }
 
@@ -280,12 +303,19 @@ func (timeRecordRepo *TimeRecordRepository) Update(
 			total_minutes = $9,
 			updated_at = NOW()
 		WHERE id = $1
-		RETURNING *
+		RETURNING project_id, user_id, task_id, work_date, work_timezone, started_at, ended_at, total_minutes, updated_at
 	`
-	err := tx.QueryRowContext(
+	queryRow := timeRecordRepo.db.QueryRowContext
+	if tx != nil {
+		queryRow = tx.QueryRowContext
+	}
+	var endedAt *time.Time
+	var totalMinutes *int
+	err := queryRow(
 		ctx,
 		q,
 		rec.ID,
+		rec.UserID,
 		rec.ProjectID,
 		rec.TaskID,
 		rec.WorkDate,
@@ -300,12 +330,15 @@ func (timeRecordRepo *TimeRecordRepository) Update(
 		&rec.WorkDate,
 		&rec.Timezone,
 		&rec.StartedAt,
-		&rec.EndedAt,
-		&rec.TotalMinutes,
+		&endedAt,
+		&totalMinutes,
+		&rec.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
+	rec.EndedAt = endedAt
+	rec.TotalMinutes = totalMinutes
 	return rec, nil
 }
 

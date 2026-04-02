@@ -214,7 +214,14 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 	if err = timeRecordService.validateTimeRecordsConflict(ctx, userId, req.TaskID, *timeRecord); err != nil {
 		return nil, err
 	}
-	return timeRecordService.timeRecordRepo.Create(ctx, timeRecord, nil)
+	err = uow.WithUnitOfWork(ctx, timeRecordService.uowManager, func(unit *uow.UnitOfWork) error {
+		timeRecord, err = timeRecordService.timeRecordRepo.Create(ctx, timeRecord, unit.GetTransaction())
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return timeRecord, nil
 }
 
 // UpdateTimeRecord services manual time record edit.
