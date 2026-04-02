@@ -13,7 +13,9 @@ import (
 	"go-timekeeper/internal/middleware"
 	"go-timekeeper/internal/model"
 	apimodel "go-timekeeper/internal/model/api"
+	"go-timekeeper/internal/uow"
 
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -24,9 +26,16 @@ type fakeTimeRecordRepo struct {
 		userID, taskID uuid.UUID,
 		workDate time.Time,
 	) ([]*model.TimeRecord, error)
+	getForUpdateFn func(ctx context.Context, id uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error)
+	createFn       func(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) (*model.TimeRecord, error)
+	updateFn       func(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) (*model.TimeRecord, error)
+	deleteFn       func(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) error
 }
 
 func (f *fakeTimeRecordRepo) GetForUpdate(ctx context.Context, id uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error) {
+	if f.getForUpdateFn != nil {
+		return f.getForUpdateFn(ctx, id, tx)
+	}
 	return nil, sql.ErrNoRows
 }
 func (f *fakeTimeRecordRepo) GetActiveByUserForUpdate(ctx context.Context, userID uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error) {
@@ -36,12 +45,21 @@ func (f *fakeTimeRecordRepo) GetListByTaskForUpdate(ctx context.Context, taskID 
 	return nil, nil
 }
 func (f *fakeTimeRecordRepo) Create(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) (*model.TimeRecord, error) {
+	if f.createFn != nil {
+		return f.createFn(ctx, rec, tx)
+	}
 	return rec, nil
 }
 func (f *fakeTimeRecordRepo) Update(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) (*model.TimeRecord, error) {
+	if f.updateFn != nil {
+		return f.updateFn(ctx, rec, tx)
+	}
 	return rec, nil
 }
 func (f *fakeTimeRecordRepo) Delete(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) error {
+	if f.deleteFn != nil {
+		return f.deleteFn(ctx, rec, tx)
+	}
 	return nil
 }
 func (f *fakeTimeRecordRepo) GetTaskReportRows(
@@ -290,5 +308,266 @@ func TestGetLocationAndUserAccessGuards(t *testing.T) {
 	}
 	if err := checkTimeRecordUserAccess(uuid.New(), model.TimeRecord{UserID: userID}); err == nil {
 		t.Fatal("expected unauthorized error")
+	}
+}
+
+func TestNewTimeRecordService(t *testing.T) {
+	repo := &fakeTimeRecordRepo{}
+	got := NewTimeRecordService(repo, nil)
+	typed, ok := got.(*TimeRecordService)
+	if !ok {
+		t.Fatalf("expected *TimeRecordService, got %T", got)
+	}
+	if typed.timeRecordRepo != repo {
+		t.Fatal("timeRecordRepo was not assigned")
+	}
+	if typed.uowManager != nil {
+		t.Fatal("uowManager should be nil")
+	}
+}
+
+func TestCreateTimeRecord_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New: %v", err)
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	projectID := uuid.New()
+	taskID := uuid.New()
+	ctx := contextWithAuthenticatedUser(t, userID)
+
+	var createdCalled bool
+	repo := &fakeTimeRecordRepo{
+		createFn: func(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) (*model.TimeRecord, error) {
+			createdCalled = true
+			if tx == nil {
+				t.Fatal("expected tx to be non-nil")
+			}
+			rec.ID = uuid.New()
+			rec.CreatedAt = time.Now().UTC()
+			rec.UpdatedAt = rec.CreatedAt
+			return rec, nil
+		},
+	}
+
+	svc := &TimeRecordService{
+		timeRecordRepo: repo,
+		uowManager:     uow.NewUnitOfWorkManager(db),
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectCommit()
+
+	start := time.Date(2026, 3, 31, 8, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 31, 9, 30, 0, 0, time.UTC)
+	resp, err := svc.CreateTimeRecord(ctx, &apimodel.CreateTimeRecordRequest{
+		ProjectID:    projectID,
+		TaskID:       taskID,
+		WorkDate:     time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+		WorkTimezone: "Europe/Prague",
+		StartTime:    start,
+		EndTime:      end,
+	})
+	if err != nil {
+		t.Fatalf("CreateTimeRecord failed: %v", err)
+	}
+	if !createdCalled {
+		t.Fatal("expected repository Create to be called")
+	}
+	if resp.ID == uuid.Nil {
+		t.Fatal("expected created id")
+	}
+	if resp.TotalMinutes == nil || *resp.TotalMinutes != 90 {
+		t.Fatalf("expected total minutes 90, got %+v", resp.TotalMinutes)
+	}
+}
+
+func TestUpdateTimeRecord_Unauthorized(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New: %v", err)
+	}
+	defer db.Close()
+
+	currentUserID := uuid.New()
+	ownerUserID := uuid.New()
+	recordID := uuid.New()
+	ctx := contextWithAuthenticatedUser(t, currentUserID)
+
+	repo := &fakeTimeRecordRepo{
+		getForUpdateFn: func(ctx context.Context, id uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error) {
+			return &model.TimeRecord{
+				ID:        id,
+				UserID:    ownerUserID,
+				ProjectID: uuid.New(),
+				TaskID:    uuid.New(),
+				WorkDate:  time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+				Timezone:  "Europe/Prague",
+				StartedAt: time.Date(2026, 3, 31, 8, 0, 0, 0, time.UTC),
+			}, nil
+		},
+	}
+	svc := &TimeRecordService{
+		timeRecordRepo: repo,
+		uowManager:     uow.NewUnitOfWorkManager(db),
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectRollback()
+
+	_, err = svc.UpdateTimeRecord(ctx, &apimodel.UpdateTimeRecordRequest{
+		ID:           recordID,
+		ProjectID:    uuid.New(),
+		TaskID:       uuid.New(),
+		WorkDate:     time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+		WorkTimezone: "Europe/Prague",
+		StartTime:    time.Date(2026, 3, 31, 8, 0, 0, 0, time.UTC),
+		EndTime:      time.Date(2026, 3, 31, 9, 0, 0, 0, time.UTC),
+	})
+	if err == nil {
+		t.Fatal("expected unauthorized error")
+	}
+	if appErr, ok := apperror.As(err); !ok || appErr.Code != apperror.CodeUnauthorizedCode {
+		t.Fatalf("expected unauthorized app error, got %v", err)
+	}
+}
+
+func TestUpdateTimeRecord_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New: %v", err)
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	recordID := uuid.New()
+	projectID := uuid.New()
+	taskID := uuid.New()
+	ctx := contextWithAuthenticatedUser(t, userID)
+
+	updatedCalled := false
+	repo := &fakeTimeRecordRepo{
+		getForUpdateFn: func(ctx context.Context, id uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error) {
+			return &model.TimeRecord{
+				ID:        id,
+				UserID:    userID,
+				ProjectID: projectID,
+				TaskID:    taskID,
+				WorkDate:  time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+				Timezone:  "Europe/Prague",
+				StartedAt: time.Date(2026, 3, 31, 8, 0, 0, 0, time.UTC),
+			}, nil
+		},
+		updateFn: func(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) (*model.TimeRecord, error) {
+			updatedCalled = true
+			if tx == nil {
+				t.Fatal("expected tx to be non-nil")
+			}
+			return rec, nil
+		},
+	}
+	svc := &TimeRecordService{
+		timeRecordRepo: repo,
+		uowManager:     uow.NewUnitOfWorkManager(db),
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectCommit()
+
+	start := time.Date(2026, 3, 31, 10, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 31, 11, 30, 0, 0, time.UTC)
+	resp, err := svc.UpdateTimeRecord(ctx, &apimodel.UpdateTimeRecordRequest{
+		ID:           recordID,
+		ProjectID:    projectID,
+		TaskID:       taskID,
+		WorkDate:     time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+		WorkTimezone: "Europe/Prague",
+		StartTime:    start,
+		EndTime:      end,
+	})
+	if err != nil {
+		t.Fatalf("UpdateTimeRecord failed: %v", err)
+	}
+	if !updatedCalled {
+		t.Fatal("expected Update repository method to be called")
+	}
+	if resp.ID != recordID {
+		t.Fatalf("expected id %s, got %s", recordID, resp.ID)
+	}
+}
+
+func TestDeleteTimeRecord_Unauthorized(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New: %v", err)
+	}
+	defer db.Close()
+
+	currentUserID := uuid.New()
+	ownerUserID := uuid.New()
+	recordID := uuid.New()
+	ctx := contextWithAuthenticatedUser(t, currentUserID)
+
+	repo := &fakeTimeRecordRepo{
+		getForUpdateFn: func(ctx context.Context, id uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error) {
+			return &model.TimeRecord{ID: id, UserID: ownerUserID}, nil
+		},
+	}
+	svc := &TimeRecordService{
+		timeRecordRepo: repo,
+		uowManager:     uow.NewUnitOfWorkManager(db),
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectRollback()
+
+	err = svc.DeleteTimeRecord(ctx, recordID)
+	if err == nil {
+		t.Fatal("expected unauthorized error")
+	}
+	if appErr, ok := apperror.As(err); !ok || appErr.Code != apperror.CodeUnauthorizedCode {
+		t.Fatalf("expected unauthorized app error, got %v", err)
+	}
+}
+
+func TestDeleteTimeRecord_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New: %v", err)
+	}
+	defer db.Close()
+
+	userID := uuid.New()
+	recordID := uuid.New()
+	ctx := contextWithAuthenticatedUser(t, userID)
+
+	deletedCalled := false
+	repo := &fakeTimeRecordRepo{
+		getForUpdateFn: func(ctx context.Context, id uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error) {
+			return &model.TimeRecord{ID: id, UserID: userID}, nil
+		},
+		deleteFn: func(ctx context.Context, rec *model.TimeRecord, tx *sql.Tx) error {
+			deletedCalled = true
+			if tx == nil {
+				t.Fatal("expected tx to be non-nil")
+			}
+			return nil
+		},
+	}
+	svc := &TimeRecordService{
+		timeRecordRepo: repo,
+		uowManager:     uow.NewUnitOfWorkManager(db),
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectCommit()
+
+	if err = svc.DeleteTimeRecord(ctx, recordID); err != nil {
+		t.Fatalf("DeleteTimeRecord failed: %v", err)
+	}
+	if !deletedCalled {
+		t.Fatal("expected Delete repository method to be called")
 	}
 }

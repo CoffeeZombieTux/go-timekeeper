@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"go-timekeeper/internal/apperror"
 	"go-timekeeper/internal/auth"
@@ -202,6 +203,21 @@ func TestTaskHandler_FlowAndBreakLogic(t *testing.T) {
 	if res.Code != http.StatusOK {
 		t.Fatalf("start task failed: %d %s", res.Code, res.Body.String())
 	}
+
+	rec = performHandlerRequest(t, r, http.MethodPatch, "/api/task/"+taskID.String()+"/stop", nil, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("stop task failed: %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = performHandlerRequest(t, r, http.MethodPatch, "/api/task/"+taskID.String()+"/close", nil, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("close task failed: %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = performHandlerRequest(t, r, http.MethodDelete, "/api/task/"+taskID.String(), nil, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("delete task failed: %d %s", rec.Code, rec.Body.String())
+	}
 }
 
 func TestProjectAndReportHandlers_UnauthorizedAndValidation(t *testing.T) {
@@ -267,8 +283,50 @@ func TestProjectAndReportHandlers_UnauthorizedAndValidation(t *testing.T) {
 		t.Fatalf("expected bad request for invalid uuid, got %d", rec.Code)
 	}
 
+	projectID := uuid.New()
+	rec = performHandlerRequest(t, r, http.MethodPatch, "/api/project", apimodel.UpdateProjectRequest{
+		ID:   projectID,
+		Name: "p2",
+	}, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected project update success, got %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = performHandlerRequest(t, r, http.MethodGet, "/api/project/"+projectID.String(), nil, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected project get success, got %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = performHandlerRequest(t, r, http.MethodGet, "/api/project/list", nil, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected project list success, got %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = performHandlerRequest(t, r, http.MethodDelete, "/api/project/"+projectID.String(), nil, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected project delete success, got %d %s", rec.Code, rec.Body.String())
+	}
+
 	rec = performHandlerRequest(t, r, http.MethodPost, "/api/report/general", map[string]any{}, token)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected bad request for invalid report payload, got %d", rec.Code)
+	}
+
+	from := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2026, 3, 31, 23, 59, 59, 0, time.UTC)
+	rec = performHandlerRequest(t, r, http.MethodPost, "/api/report/project", apimodel.ProjectReportRequest{
+		ProjectID: projectID,
+		TimeRange: &apimodel.TimeRangeParams{FromDate: from, ToDate: to},
+	}, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected project report success, got %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = performHandlerRequest(t, r, http.MethodPost, "/api/report/task", apimodel.TaskReportRequest{
+		TaskID:    uuid.New(),
+		TimeRange: &apimodel.TimeRangeParams{FromDate: from, ToDate: to},
+	}, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected task report success, got %d %s", rec.Code, rec.Body.String())
 	}
 }
