@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoTimekeeper Demo Client</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main class="container">
+  <header class="header">
+    <h1>GoTimekeeper Demo Client</h1>
+    <p>Simple local UI to demonstrate all backend endpoints.</p>
+  </header>
+
+  <section class="card">
+    <h2>Config & Demo Data</h2>
+    <div class="grid">
+      <label>Base URL<input id="baseUrl" type="text"></label>
+      <label>Timezone<input id="timezone" type="text"></label>
+      <label>Email<input id="email" type="text"></label>
+      <label>Password<input id="password" type="text"></label>
+      <label>New Password<input id="newPassword" type="text"></label>
+      <label>Access Token<input id="accessToken" type="text"></label>
+      <label>Refresh Token<input id="refreshToken" type="text"></label>
+      <label>User ID<input id="userId" type="text"></label>
+      <label>Project ID<input id="projectId" type="text"></label>
+      <label>Project Name<input id="projectName" type="text"></label>
+      <label>Task ID<input id="taskId" type="text"></label>
+      <label>Task Name<input id="taskName" type="text"></label>
+      <label>Time Record ID<input id="timeRecordId" type="text"></label>
+      <label>Work Date (RFC3339)<input id="workDate" type="text"></label>
+      <label>Start Time (RFC3339)<input id="startTime" type="text"></label>
+      <label>End Time (RFC3339)<input id="endTime" type="text"></label>
+      <label>Report From Date (RFC3339)<input id="reportFromDate" type="text"></label>
+      <label>Report To Date (RFC3339)<input id="reportToDate" type="text"></label>
+      <label>Project IDs CSV (general report)<input id="projectIdsCsv" type="text"></label>
+      <label>Task IDs CSV (project report)<input id="taskIdsCsv" type="text"></label>
+      <label>Task List Limit<input id="taskListLimit" type="number"></label>
+      <label>Task List Offset<input id="taskListOffset" type="number"></label>
+      <label>Task List isActive
+        <select id="taskListIsActive">
+          <option value="">(all)</option>
+          <option value="1">1 (active)</option>
+          <option value="0">0 (closed)</option>
+        </select>
+      </label>
+    </div>
+    <div class="actions">
+      <button id="saveStateBtn">Save State</button>
+      <button id="resetStateBtn">Reset Demo Values</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Health</h2>
+    <div class="actions">
+      <button data-action="ping">Ping</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Auth & User</h2>
+    <div class="actions">
+      <button data-action="register">Register</button>
+      <button data-action="login">Login</button>
+      <button data-action="refresh">Refresh</button>
+      <button data-action="logout">Logout</button>
+      <button data-action="me">Get Me</button>
+      <button data-action="changePassword">Change Password</button>
+      <button data-action="deleteMe">Delete Me</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Projects</h2>
+    <div class="actions">
+      <button data-action="createProject">Create Project</button>
+      <button data-action="getProject">Get Project</button>
+      <button data-action="listProjects">List Projects</button>
+      <button data-action="updateProject">Update Project</button>
+      <button data-action="deleteProject">Delete Project</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Tasks</h2>
+    <div class="actions">
+      <button data-action="createTask">Create Task</button>
+      <button data-action="getTask">Get Task</button>
+      <button data-action="listProjectTasks">List Project Tasks</button>
+      <button data-action="updateTask">Update Task</button>
+      <button data-action="deleteTask">Delete Task</button>
+      <button data-action="startTask">Start Task</button>
+      <button data-action="stopTask">Stop Task</button>
+      <button data-action="closeTask">Close Task</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Time Records (Manual Sessions)</h2>
+    <div class="actions">
+      <button data-action="createTimeRecord">Create Time Record</button>
+      <button data-action="updateTimeRecord">Update Time Record</button>
+      <button data-action="deleteTimeRecord">Delete Time Record</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Reports</h2>
+    <div class="actions">
+      <button data-action="generalReport">General Report</button>
+      <button data-action="projectReport">Project Report</button>
+      <button data-action="taskReport">Task Report</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Last Request</h2>
+    <pre id="lastRequest"></pre>
+  </section>
+
+  <section class="card">
+    <h2>Last Response</h2>
+    <pre id="lastResponse"></pre>
+  </section>
+
+  <section class="card">
+    <h2>Status</h2>
+    <p id="statusLine">Ready.</p>
+  </section>
+</main>
+
+<script src="./app.js"></script>
+</body>
+</html>
