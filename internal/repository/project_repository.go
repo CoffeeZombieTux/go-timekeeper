@@ -93,7 +93,11 @@ func (projectRepo ProjectRepository) GetUserProjects(ctx context.Context, userID
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && projectRepo.logger != nil {
+			projectRepo.logger.WithError(closeErr).Error(logger.LogMessageFailedToCloseRows)
+		}
+	}()
 
 	var projects []*model.Project
 	for rows.Next() {

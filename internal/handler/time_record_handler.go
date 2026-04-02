@@ -19,7 +19,10 @@ type TimeRecordHandler struct {
 }
 
 // NewTimeRecordHandler creates a new TimeRecordHandler instance.
-func NewTimeRecordHandler(timeRecordService service.TimeRecordServiceInterface, logger *logger.Logger) *TimeRecordHandler {
+func NewTimeRecordHandler(
+	timeRecordService service.TimeRecordServiceInterface,
+	logger *logger.Logger,
+) *TimeRecordHandler {
 	return &TimeRecordHandler{
 		timeRecordService: timeRecordService,
 		logger:            logger,

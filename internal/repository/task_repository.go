@@ -139,7 +139,11 @@ func (taskRepo TaskRepository) GetByProjectAndUserId(
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && taskRepo.logger != nil {
+			taskRepo.logger.WithError(closeErr).Error(logger.LogMessageFailedToCloseRows)
+		}
+	}()
 	var tasks []*model.Task
 	for rows.Next() {
 		var task model.Task
@@ -155,6 +159,9 @@ func (taskRepo TaskRepository) GetByProjectAndUserId(
 			return nil, err
 		}
 		tasks = append(tasks, &task)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return tasks, nil
 }
@@ -183,7 +190,10 @@ func (taskRepo TaskRepository) CountByProjectAndUserId(
 
 	err := taskRepo.db.QueryRowContext(ctx, query, args...).Scan(&count)
 	if err != nil {
-		return 0, apperror.FromDB(err, "Failed to count project tasks records", apperror.CodeInternalErrorCode)
+		return 0, apperror.FromDB(
+			err,
+			"Failed to count project tasks records", apperror.CodeInternalErrorCode,
+		)
 	}
 
 	return count, nil

@@ -8,7 +8,6 @@ const (
 	LogMessageFailedToCloseDatabaseConnection = "Failed to close database connection"
 	LogMessageDatabaseHealthCheckFailed       = "Database health check failed"
 	LogMessageFailedToCloseRows               = "failed_to_close_rows"
-	LogMessageFailedToCloseResponseBody       = "failed_to_close_response_body"
 	LogMessageFailedToRegisterUser            = "failed_to_register_user"
 	LogMessageFailedToLoginUser               = "failed_to_login_user"
 	LogMessageFailedToLogoutUser              = "failed_to_logout_user"
