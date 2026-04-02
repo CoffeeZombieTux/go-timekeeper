@@ -144,7 +144,14 @@ func (taskService *TaskService) GetByProject(
 	if err != nil {
 		return nil, nil, err
 	}
-	tasks, err := taskService.taskRepo.GetByProjectAndUserId(ctx, projectID, userId, isActive, params.Limit, params.Offset)
+	tasks, err := taskService.taskRepo.GetByProjectAndUserId(
+		ctx,
+		projectID,
+		userId,
+		isActive,
+		params.Limit,
+		params.Offset,
+	)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -276,7 +283,11 @@ func checkTaskUserAccess(userId uuid.UUID, task model.Task) error {
 	if userId == task.UserID {
 		return nil
 	}
-	return apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+	return apperror.New(
+		apperror.CodeUnauthorizedCode,
+		apperror.CodeUnauthorizedMessage,
+		"User not authenticated",
+	)
 }
 
 // checkStatusValidator checks if the new status is valid for the old status.

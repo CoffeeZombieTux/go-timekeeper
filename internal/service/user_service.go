@@ -204,7 +204,11 @@ func (userService *UserService) loginUser(ctx context.Context, user *model.User)
 func getUserIdFromRequest(ctx context.Context) (uuid.UUID, error) {
 	userId, ok := middleware.UserIDFromContext(ctx)
 	if !ok {
-		return uuid.Nil, apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+		return uuid.Nil, apperror.New(
+			apperror.CodeUnauthorizedCode,
+			apperror.CodeUnauthorizedMessage,
+			"User not authenticated",
+		)
 	}
 	return userId, nil
 }

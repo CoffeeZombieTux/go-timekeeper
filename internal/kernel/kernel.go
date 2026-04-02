@@ -61,7 +61,11 @@ func New() (*Kernel, error) {
 	timeRecordRepo := repository.NewTimeRecordRepository(db.DB, log)
 
 	// Services
-	tokenManager := auth.NewTokenManager(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTLMinutes, cfg.Auth.RefreshTokenTTLHours)
+	tokenManager := auth.NewTokenManager(
+		cfg.Auth.JWTSecret,
+		cfg.Auth.AccessTokenTTLMinutes,
+		cfg.Auth.RefreshTokenTTLHours,
+	)
 	userService := service.NewUserService(userRepo, tokenManager, refreshTokenRepo)
 	projectService := service.NewProjectService(projectRepo)
 	timeRecordService := service.NewTimeRecordService(timeRecordRepo, unitOfWork)

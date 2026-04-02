@@ -19,7 +19,10 @@ type TimeRecordHandler struct {
 }
 
 // NewTimeRecordHandler creates a new TimeRecordHandler instance.
-func NewTimeRecordHandler(timeRecordService service.TimeRecordServiceInterface, logger *logger.Logger) *TimeRecordHandler {
+func NewTimeRecordHandler(
+	timeRecordService service.TimeRecordServiceInterface,
+	logger *logger.Logger,
+) *TimeRecordHandler {
 	return &TimeRecordHandler{
 		timeRecordService: timeRecordService,
 		logger:            logger,
@@ -44,7 +47,7 @@ func (timeRecordHandler *TimeRecordHandler) CreateTimeRecord(ctx *gin.Context) {
 		writeError(ctx, status, message, code, details)
 		return
 	}
-	writeSuccess(ctx, http.StatusOK, "Time record(s) created", response)
+	writeSuccess(ctx, http.StatusOK, "Time record created", response)
 }
 
 // UpdateTimeRecord handles time record update requests.
@@ -86,5 +89,5 @@ func (timeRecordHandler *TimeRecordHandler) DeleteTimeRecord(ctx *gin.Context) {
 		writeError(ctx, status, message, code, details)
 		return
 	}
-	writeSuccess(ctx, http.StatusOK, "Time record", "")
+	writeSuccess(ctx, http.StatusOK, "Time record deleted", "")
 }

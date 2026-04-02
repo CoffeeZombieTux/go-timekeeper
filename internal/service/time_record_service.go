@@ -93,7 +93,11 @@ func (timeRecordService *TimeRecordService) StartTask(
 }
 
 // StopTask stops a task.
-func (timeRecordService *TimeRecordService) StopTask(ctx context.Context, task *model.Task, unit *uow.UnitOfWork) error {
+func (timeRecordService *TimeRecordService) StopTask(
+	ctx context.Context,
+	task *model.Task,
+	unit *uow.UnitOfWork,
+) error {
 	tx, err := getTransaction(unit)
 	if err != nil {
 		return err
@@ -164,7 +168,10 @@ func (timeRecordService *TimeRecordService) StopTask(ctx context.Context, task *
 }
 
 // CreateTimeRecord services manual time record creation.
-func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context, req *apimodel.CreateTimeRecordRequest) (*model.TimeRecord, error) {
+func (timeRecordService *TimeRecordService) CreateTimeRecord(
+	ctx context.Context,
+	req *apimodel.CreateTimeRecordRequest,
+) (*model.TimeRecord, error) {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
 		return nil, err
@@ -178,7 +185,11 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 		return nil, apperror.New(
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("stop time should be after start. Started at: %s stop at: %s", req.StartTime, req.EndTime),
+			fmt.Sprintf(
+				"stop time should be after start. Started at: %s stop at: %s",
+				req.StartTime,
+				req.EndTime,
+			),
 		)
 	}
 
@@ -202,7 +213,12 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 		return nil, apperror.New(
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("workDate %s does not match startTime date %s in timezone %s", req.WorkDate, startLocal, req.WorkTimezone),
+			fmt.Sprintf(
+				"workDate %s does not match startTime date %s in timezone %s",
+				req.WorkDate,
+				startLocal,
+				req.WorkTimezone,
+			),
 		)
 	}
 
@@ -222,19 +238,21 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 	if err = timeRecordService.validateTimeRecordsConflict(ctx, userId, req.TaskID, *timeRecord); err != nil {
 		return nil, err
 	}
-
-	if err = uow.WithUnitOfWork(ctx, timeRecordService.uowManager, func(unit *uow.UnitOfWork) error {
-		tx := unit.GetTransaction()
-		timeRecord, err = timeRecordService.timeRecordRepo.Create(ctx, timeRecord, tx)
+	err = uow.WithUnitOfWork(ctx, timeRecordService.uowManager, func(unit *uow.UnitOfWork) error {
+		timeRecord, err = timeRecordService.timeRecordRepo.Create(ctx, timeRecord, unit.GetTransaction())
 		return err
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 	return timeRecord, nil
 }
 
 // UpdateTimeRecord services manual time record edit.
-func (timeRecordService *TimeRecordService) UpdateTimeRecord(ctx context.Context, req *apimodel.UpdateTimeRecordRequest) (*model.TimeRecord, error) {
+func (timeRecordService *TimeRecordService) UpdateTimeRecord(
+	ctx context.Context,
+	req *apimodel.UpdateTimeRecordRequest,
+) (*model.TimeRecord, error) {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
 		return nil, err
@@ -247,7 +265,11 @@ func (timeRecordService *TimeRecordService) UpdateTimeRecord(ctx context.Context
 		return nil, apperror.New(
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("stop time should be after start. Started at: %s stop at: %s", req.StartTime, req.EndTime),
+			fmt.Sprintf(
+				"stop time should be after start. Started at: %s stop at: %s",
+				req.StartTime,
+				req.EndTime,
+			),
 		)
 	}
 	startLocal := req.StartTime.In(loc)
@@ -269,7 +291,12 @@ func (timeRecordService *TimeRecordService) UpdateTimeRecord(ctx context.Context
 		return nil, apperror.New(
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("workDate %s does not match startTime date %s in timezone %s", req.WorkDate, startLocal, req.WorkTimezone),
+			fmt.Sprintf(
+				"workDate %s does not match startTime date %s in timezone %s",
+				req.WorkDate,
+				startLocal,
+				req.WorkTimezone,
+			),
 		)
 	}
 	var timeRecord *model.TimeRecord
@@ -336,7 +363,11 @@ func (timeRecordService *TimeRecordService) validateTimeRecordsConflict(
 		return apperror.New(
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("stop time should be after start. Started at: %s stop at: %s", candidateStart, candidateEnd),
+			fmt.Sprintf(
+				"stop time should be after start. Started at: %s stop at: %s",
+				candidateStart,
+				candidateEnd,
+			),
 		)
 	}
 
@@ -482,5 +513,9 @@ func checkTimeRecordUserAccess(userId uuid.UUID, timeRecord model.TimeRecord) er
 	if userId == timeRecord.UserID {
 		return nil
 	}
-	return apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+	return apperror.New(
+		apperror.CodeUnauthorizedCode,
+		apperror.CodeUnauthorizedMessage,
+		"User not authenticated",
+	)
 }

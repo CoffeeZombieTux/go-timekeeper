@@ -67,7 +67,11 @@ func (timeRecordRepo *TimeRecordRepository) GetTaskDayClosedRecords(
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && timeRecordRepo.logger != nil {
+			timeRecordRepo.logger.WithError(closeErr).Error(logger.LogMessageFailedToCloseRows)
+		}
+	}()
 
 	result := make([]*model.TimeRecord, 0)
 	for rows.Next() {
@@ -114,7 +118,11 @@ func NewTimeRecordRepository(db *sql.DB, logger *logger.Logger) TimeRecordReposi
 }
 
 // GetForUpdate returns a time record by ID.
-func (timeRecordRepo *TimeRecordRepository) GetForUpdate(ctx context.Context, id uuid.UUID, tx *sql.Tx) (*model.TimeRecord, error) {
+func (timeRecordRepo *TimeRecordRepository) GetForUpdate(
+	ctx context.Context,
+	id uuid.UUID,
+	tx *sql.Tx,
+) (*model.TimeRecord, error) {
 	const q = `
 		SELECT
 			id, user_id, project_id, task_id,
@@ -206,7 +214,11 @@ func (timeRecordRepo *TimeRecordRepository) GetListByTaskForUpdate(
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && timeRecordRepo.logger != nil {
+			timeRecordRepo.logger.WithError(closeErr).Error(logger.LogMessageFailedToCloseRows)
+		}
+	}()
 
 	result := make([]*model.TimeRecord, 0)
 	for rows.Next() {
@@ -228,8 +240,6 @@ func (timeRecordRepo *TimeRecordRepository) GetListByTaskForUpdate(
 		); err != nil {
 			return nil, err
 		}
-		row.EndedAt = endedAt
-		row.TotalMinutes = totalMinutes
 		result = append(result, &row)
 	}
 
@@ -398,7 +408,7 @@ func (timeRecordRepo *TimeRecordRepository) GetTaskReportRows(
 	if err != nil {
 		return nil, err
 	}
-	return getTimeRecordsFromDbRows(rows)
+	return getTimeRecordsFromDbRows(rows, timeRecordRepo.logger)
 }
 
 // GetProjectReportRows returns a list of time records for a given user, project, and date range.
@@ -444,7 +454,7 @@ func (timeRecordRepo *TimeRecordRepository) GetProjectReportRows(
 	if err != nil {
 		return nil, err
 	}
-	return getTimeRecordsFromDbRows(rows)
+	return getTimeRecordsFromDbRows(rows, timeRecordRepo.logger)
 }
 
 // GetGeneralReportRows returns a list of time records for a given user, project, and date range.
@@ -489,17 +499,28 @@ func (timeRecordRepo *TimeRecordRepository) GetGeneralReportRows(
 	if err != nil {
 		return nil, err
 	}
-	return getTimeRecordsFromDbRows(rows)
+	return getTimeRecordsFromDbRows(rows, timeRecordRepo.logger)
 }
 
 // getTimeRecordsFromDbRows converts a slice of sql.Rows into a slice of TimeRecordReportRow.
-func getTimeRecordsFromDbRows(rows *sql.Rows) ([]*model.TimeRecordReportRow, error) {
-	defer rows.Close()
+func getTimeRecordsFromDbRows(rows *sql.Rows, log *logger.Logger) ([]*model.TimeRecordReportRow, error) {
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && log != nil {
+			log.WithError(closeErr).Error(logger.LogMessageFailedToCloseRows)
+		}
+	}()
 
 	result := make([]*model.TimeRecordReportRow, 0)
 	for rows.Next() {
 		var row model.TimeRecordReportRow
-		if err := rows.Scan(&row.ID, &row.ProjectID, &row.TaskID, &row.WorkDate, &row.WorkTimezone, &row.TotalMinutes); err != nil {
+		if err := rows.Scan(
+			&row.ID,
+			&row.ProjectID,
+			&row.TaskID,
+			&row.WorkDate,
+			&row.WorkTimezone,
+			&row.TotalMinutes,
+		); err != nil {
 			return nil, err
 		}
 		result = append(result, &row)
