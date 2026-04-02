@@ -93,7 +93,11 @@ func (timeRecordService *TimeRecordService) StartTask(
 }
 
 // StopTask stops a task.
-func (timeRecordService *TimeRecordService) StopTask(ctx context.Context, task *model.Task, unit *uow.UnitOfWork) error {
+func (timeRecordService *TimeRecordService) StopTask(
+	ctx context.Context,
+	task *model.Task,
+	unit *uow.UnitOfWork,
+) error {
 	tx, err := getTransaction(unit)
 	if err != nil {
 		return err
@@ -121,7 +125,7 @@ func (timeRecordService *TimeRecordService) StopTask(ctx context.Context, task *
 		return apperror.New(
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("stop time should be after start. Started at: %sm stop at: %s", active.StartedAt, stopAt),
+			fmt.Sprintf("stop time should be after start. Started at: %s stop at: %s", active.StartedAt, stopAt),
 		)
 	}
 
@@ -164,7 +168,10 @@ func (timeRecordService *TimeRecordService) StopTask(ctx context.Context, task *
 }
 
 // CreateTimeRecord services manual time record creation.
-func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context, req *apimodel.CreateTimeRecordRequest) (*model.TimeRecord, error) {
+func (timeRecordService *TimeRecordService) CreateTimeRecord(
+	ctx context.Context,
+	req *apimodel.CreateTimeRecordRequest,
+) (*model.TimeRecord, error) {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
 		return nil, err
@@ -178,7 +185,11 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 		return nil, apperror.New(
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("stop time should be after start. Started at: %sm stop at: %s", req.StartTime, req.EndTime),
+			fmt.Sprintf(
+				"stop time should be after start. Started at: %s stop at: %s",
+				req.StartTime,
+				req.EndTime,
+			),
 		)
 	}
 
@@ -190,9 +201,22 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
 			fmt.Sprintf(
-				"start and end time should be on the same day. Started at: %sm stop at: %s. Location: %s",
+				"start and end time should be on the same day. Started at: %s stop at: %s. Location: %s",
 				startLocal,
 				endLocal,
+				req.WorkTimezone,
+			),
+		)
+	}
+	expectedWorkDate := normalizeDate(startLocal, loc)
+	if !normalizeDate(req.WorkDate, loc).Equal(expectedWorkDate) {
+		return nil, apperror.New(
+			apperror.CodeValidationErrorCode,
+			apperror.CodeValidationErrorMessage,
+			fmt.Sprintf(
+				"workDate %s does not match startTime date %s in timezone %s",
+				req.WorkDate,
+				startLocal,
 				req.WorkTimezone,
 			),
 		)
@@ -205,7 +229,7 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 		UserID:       userId,
 		ProjectID:    req.ProjectID,
 		TaskID:       req.TaskID,
-		WorkDate:     req.WorkDate,
+		WorkDate:     expectedWorkDate,
 		Timezone:     req.WorkTimezone,
 		StartedAt:    req.StartTime,
 		EndedAt:      &req.EndTime,
@@ -225,10 +249,55 @@ func (timeRecordService *TimeRecordService) CreateTimeRecord(ctx context.Context
 }
 
 // UpdateTimeRecord services manual time record edit.
-func (timeRecordService *TimeRecordService) UpdateTimeRecord(ctx context.Context, req *apimodel.UpdateTimeRecordRequest) (*model.TimeRecord, error) {
+func (timeRecordService *TimeRecordService) UpdateTimeRecord(
+	ctx context.Context,
+	req *apimodel.UpdateTimeRecordRequest,
+) (*model.TimeRecord, error) {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
 		return nil, err
+	}
+	loc, err := getLocation(req.WorkTimezone)
+	if err != nil {
+		return nil, err
+	}
+	if req.EndTime.Before(req.StartTime) {
+		return nil, apperror.New(
+			apperror.CodeValidationErrorCode,
+			apperror.CodeValidationErrorMessage,
+			fmt.Sprintf(
+				"stop time should be after start. Started at: %s stop at: %s",
+				req.StartTime,
+				req.EndTime,
+			),
+		)
+	}
+	startLocal := req.StartTime.In(loc)
+	endLocal := req.EndTime.In(loc)
+	if !sameLocalDate(startLocal, endLocal, loc) {
+		return nil, apperror.New(
+			apperror.CodeValidationErrorCode,
+			apperror.CodeValidationErrorMessage,
+			fmt.Sprintf(
+				"start and end time should be on the same day. Started at: %s stop at: %s. Location: %s",
+				startLocal,
+				endLocal,
+				req.WorkTimezone,
+			),
+		)
+	}
+	expectedWorkDate := normalizeDate(startLocal, loc)
+	if !normalizeDate(req.WorkDate, loc).Equal(expectedWorkDate) {
+		return nil, apperror.New(
+			apperror.CodeValidationErrorCode,
+			apperror.CodeValidationErrorMessage,
+			fmt.Sprintf(
+				"workDate %s does not match startTime date %s in timezone %s",
+				req.WorkDate,
+				startLocal,
+				req.WorkTimezone,
+			),
+		)
 	}
 	var timeRecord *model.TimeRecord
 	err = uow.WithUnitOfWork(ctx, timeRecordService.uowManager, func(unit *uow.UnitOfWork) error {
@@ -242,7 +311,7 @@ func (timeRecordService *TimeRecordService) UpdateTimeRecord(ctx context.Context
 		}
 		timeRecord.ProjectID = req.ProjectID
 		timeRecord.TaskID = req.TaskID
-		timeRecord.WorkDate = req.WorkDate
+		timeRecord.WorkDate = expectedWorkDate
 		timeRecord.Timezone = req.WorkTimezone
 		timeRecord.StartedAt = req.StartTime
 		timeRecord.EndedAt = &req.EndTime
@@ -294,7 +363,11 @@ func (timeRecordService *TimeRecordService) validateTimeRecordsConflict(
 		return apperror.New(
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
-			fmt.Sprintf("stop time should be after start. Started at: %s stop at: %s", candidateStart, candidateEnd),
+			fmt.Sprintf(
+				"stop time should be after start. Started at: %s stop at: %s",
+				candidateStart,
+				candidateEnd,
+			),
 		)
 	}
 
@@ -440,5 +513,9 @@ func checkTimeRecordUserAccess(userId uuid.UUID, timeRecord model.TimeRecord) er
 	if userId == timeRecord.UserID {
 		return nil
 	}
-	return apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+	return apperror.New(
+		apperror.CodeUnauthorizedCode,
+		apperror.CodeUnauthorizedMessage,
+		"User not authenticated",
+	)
 }

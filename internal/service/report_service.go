@@ -45,7 +45,7 @@ type taskDays map[uuid.UUID]daySessions
 // projectTasks is a map of projects to taskDays.
 type projectTasks map[uuid.UUID]taskDays
 
-// GeneralReport generates a general report for the given user. Fiter by projects ids and time range.
+// GeneralReport generates a general report for the given user. Filter by project IDs and time range.
 func (reportService *ReportService) GeneralReport(
 	ctx context.Context,
 	req *apimodel.GeneralReportRequest,
@@ -104,13 +104,13 @@ func (reportService *ReportService) GeneralReport(
 			for workDate, day := range days {
 				taskDaysResponse = append(taskDaysResponse, reportService.getDaySessionsReportFromRows(workDate, day))
 			}
-			taskToAppend, err := reportService.getTaskReportResponseFromDaySessions(taskID, taskDaysResponse)
+			taskToAppend, err := reportService.getTaskReportResponseFromDaySessions(ctx, taskID, taskDaysResponse)
 			if err != nil {
 				return nil, err
 			}
 			tasksResponse = append(tasksResponse, taskToAppend)
 		}
-		projectToAppend, err := reportService.getProjectReportResponseFromTasks(projectID, tasksResponse)
+		projectToAppend, err := reportService.getProjectReportResponseFromTasks(ctx, projectID, tasksResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -176,14 +176,14 @@ func (reportService *ReportService) ProjectReport(
 		for workDate, day := range days {
 			taskDays = append(taskDays, reportService.getDaySessionsReportFromRows(workDate, day))
 		}
-		taskToAppend, err := reportService.getTaskReportResponseFromDaySessions(taskID, taskDays)
+		taskToAppend, err := reportService.getTaskReportResponseFromDaySessions(ctx, taskID, taskDays)
 		if err != nil {
 			return nil, err
 		}
 		tasks = append(tasks, taskToAppend)
 	}
 
-	projectReport, err := reportService.getProjectReportResponseFromTasks(req.ProjectID, tasks)
+	projectReport, err := reportService.getProjectReportResponseFromTasks(ctx, req.ProjectID, tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (reportService *ReportService) TaskReport(
 		days = append(days, reportService.getDaySessionsReportFromRows(workDate, records))
 	}
 
-	taskReport, err := reportService.getTaskReportResponseFromDaySessions(req.TaskID, days)
+	taskReport, err := reportService.getTaskReportResponseFromDaySessions(ctx, req.TaskID, days)
 	if err != nil {
 		return nil, err
 	}
@@ -254,13 +254,14 @@ func (reportService *ReportService) getDaySessionsReportFromRows(
 
 // getTaskReportResponseFromDaySessions converts a list of day report responses to a task report response.
 func (reportService *ReportService) getTaskReportResponseFromDaySessions(
+	ctx context.Context,
 	taskId uuid.UUID,
 	rows []*apimodel.DayReportResponse,
 ) (*apimodel.TaskReportResponse, error) {
 	total := SumBy(rows, func(r *apimodel.DayReportResponse) int {
 		return r.TotalMinutes
 	})
-	task, err := reportService.taskRepo.Get(context.Background(), taskId, nil)
+	task, err := reportService.taskRepo.Get(ctx, taskId, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -274,13 +275,14 @@ func (reportService *ReportService) getTaskReportResponseFromDaySessions(
 
 // getProjectReportResponseFromTasks converts a list of task report responses to a project report response.
 func (reportService *ReportService) getProjectReportResponseFromTasks(
+	ctx context.Context,
 	projectID uuid.UUID,
 	rows []*apimodel.TaskReportResponse,
 ) (*apimodel.ProjectReportResponse, error) {
 	total := SumBy(rows, func(r *apimodel.TaskReportResponse) int {
 		return r.TotalMinutes
 	})
-	project, err := reportService.projectRepo.Get(context.Background(), projectID)
+	project, err := reportService.projectRepo.Get(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,10 @@ type TimeRecordHandler struct {
 }
 
 // NewTimeRecordHandler creates a new TimeRecordHandler instance.
-func NewTimeRecordHandler(timeRecordService service.TimeRecordServiceInterface, logger *logger.Logger) *TimeRecordHandler {
+func NewTimeRecordHandler(
+	timeRecordService service.TimeRecordServiceInterface,
+	logger *logger.Logger,
+) *TimeRecordHandler {
 	return &TimeRecordHandler{
 		timeRecordService: timeRecordService,
 		logger:            logger,
@@ -73,6 +76,7 @@ func (timeRecordHandler *TimeRecordHandler) DeleteTimeRecord(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
+		return
 	}
 	err = timeRecordHandler.timeRecordService.DeleteTimeRecord(ctx.Request.Context(), id)
 	if err != nil {

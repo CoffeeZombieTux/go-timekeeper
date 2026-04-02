@@ -82,7 +82,7 @@ func Load() (*Config, error) {
 	return config, nil
 }
 
-// getEnv retrieves the value of an environment variable or returns a default value if it's not set'
+// getEnv retrieves the value of an environment variable or returns a default value if it is not set.
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
@@ -90,7 +90,7 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-// getEnvInt retrieves the value of an environment variable as an integer or returns a default value if it's not set'
+// getEnvInt retrieves the value of an environment variable as an integer or returns a default value if it is not set.
 func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {

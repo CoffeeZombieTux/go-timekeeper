@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -55,7 +54,6 @@ func (tm *TokenManager) ParseAccessToken(tokenStr string) (uuid.UUID, string, er
 		return tm.Secret, nil
 	})
 	if err != nil {
-		log.Printf("jwt.Parse error: %v", err)
 		return uuid.Nil, "", err
 	}
 

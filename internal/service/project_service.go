@@ -30,7 +30,10 @@ func NewProjectService(projectRepo repository.ProjectRepositoryInterface) *Proje
 }
 
 // Create process a new project creation.
-func (projectService *ProjectService) Create(ctx context.Context, request apimodel.CreateProjectRequest) (*model.Project, error) {
+func (projectService *ProjectService) Create(
+	ctx context.Context,
+	request apimodel.CreateProjectRequest,
+) (*model.Project, error) {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
 		return nil, err
@@ -43,7 +46,10 @@ func (projectService *ProjectService) Create(ctx context.Context, request apimod
 }
 
 // Update process a project update.
-func (projectService *ProjectService) Update(ctx context.Context, request apimodel.UpdateProjectRequest) (*model.Project, error) {
+func (projectService *ProjectService) Update(
+	ctx context.Context,
+	request apimodel.UpdateProjectRequest,
+) (*model.Project, error) {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
 		return nil, err
@@ -108,5 +114,9 @@ func checkProjectUserAccess(userId uuid.UUID, project model.Project) error {
 	if userId == project.UserID {
 		return nil
 	}
-	return apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+	return apperror.New(
+		apperror.CodeUnauthorizedCode,
+		apperror.CodeUnauthorizedMessage,
+		"User not authenticated",
+	)
 }

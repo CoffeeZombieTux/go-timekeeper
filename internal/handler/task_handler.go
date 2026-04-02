@@ -101,6 +101,7 @@ func (taskHandler *TaskHandler) GetProjectTasks(ctx *gin.Context) {
 	projectId, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
+		return
 	}
 
 	limitParam := ctx.DefaultQuery("limit", "")
@@ -159,6 +160,7 @@ func (taskHandler *TaskHandler) DeleteTask(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
+		return
 	}
 	err = taskHandler.taskService.Delete(ctx.Request.Context(), id)
 	if err != nil {
@@ -180,12 +182,14 @@ func (taskHandler *TaskHandler) StartTask(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
+		return
 	}
 
 	workTimezone := ctx.GetHeader("X-Timezone")
 	err = validateTimezone(workTimezone)
 	if err != nil {
 		writeBindError(ctx, errors.New("invalid or missing X-Timezone header"))
+		return
 	}
 
 	err = taskHandler.taskService.Start(ctx.Request.Context(), id, workTimezone)
@@ -208,6 +212,7 @@ func (taskHandler *TaskHandler) StopTask(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
+		return
 	}
 	err = taskHandler.taskService.Stop(ctx.Request.Context(), id)
 	if err != nil {
@@ -229,6 +234,7 @@ func (taskHandler *TaskHandler) CloseTask(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		writeBindError(ctx, errors.New("missing or invalid UUID in request"))
+		return
 	}
 	err = taskHandler.taskService.Close(ctx.Request.Context(), id)
 	if err != nil {

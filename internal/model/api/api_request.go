@@ -127,9 +127,9 @@ func (input *TimeRangeParams) ValidateTimeRangeParams() error {
 			apperror.CodeValidationErrorCode,
 			apperror.CodeValidationErrorMessage,
 			fmt.Sprintf(
-				"stop time should be after start. Started at: %sm stop at: %s",
-				input.ToDate,
+				"stop time should be after start. Started at: %s stop at: %s",
 				input.FromDate,
+				input.ToDate,
 			),
 		)
 	}
@@ -167,7 +167,7 @@ type CreateTimeRecordRequest struct {
 
 // UpdateTimeRecordRequest represents the request body for updating a time record
 type UpdateTimeRecordRequest struct {
-	ID           uuid.UUID `json:"ID" binding:"required"`
+	ID           uuid.UUID `json:"id" binding:"required"`
 	ProjectID    uuid.UUID `json:"projectID" binding:"required"`
 	TaskID       uuid.UUID `json:"taskID" binding:"required"`
 	WorkDate     time.Time `json:"workDate" binding:"required"`

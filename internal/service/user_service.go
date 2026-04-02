@@ -113,7 +113,7 @@ func (userService *UserService) Logout(ctx context.Context, req apimodel.Refresh
 	return nil
 }
 
-// Me returns the current user's information.'
+// Me returns the current user's information.
 func (userService *UserService) Me(ctx context.Context) (*apimodel.UserPayload, error) {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
@@ -132,7 +132,7 @@ func (userService *UserService) Me(ctx context.Context) (*apimodel.UserPayload, 
 	}, nil
 }
 
-// ChangePassword process changing the user's password.'
+// ChangePassword processes changing the user's password.
 func (userService *UserService) ChangePassword(ctx context.Context, req apimodel.ChangePasswordRequest) error {
 	userId, err := getUserIdFromRequest(ctx)
 	if err != nil {
@@ -204,7 +204,11 @@ func (userService *UserService) loginUser(ctx context.Context, user *model.User)
 func getUserIdFromRequest(ctx context.Context) (uuid.UUID, error) {
 	userId, ok := middleware.UserIDFromContext(ctx)
 	if !ok {
-		return uuid.Nil, apperror.New(apperror.CodeUnauthorizedCode, apperror.CodeUnauthorizedMessage, "User not authenticated")
+		return uuid.Nil, apperror.New(
+			apperror.CodeUnauthorizedCode,
+			apperror.CodeUnauthorizedMessage,
+			"User not authenticated",
+		)
 	}
 	return userId, nil
 }
