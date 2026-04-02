@@ -154,3 +154,24 @@ type TaskReportRequest struct {
 	TaskID    uuid.UUID        `json:"taskID" binding:"required"`
 	TimeRange *TimeRangeParams `json:"timeRange" binding:"required"`
 }
+
+// CreateTimeRecordRequest represents the request body for creating a new time record
+type CreateTimeRecordRequest struct {
+	ProjectID    uuid.UUID `json:"projectID" binding:"required"`
+	TaskID       uuid.UUID `json:"taskID" binding:"required"`
+	WorkDate     time.Time `json:"workDate" binding:"required"`
+	WorkTimezone string    `json:"workTimezone" binding:"required"`
+	StartTime    time.Time `json:"startTime" binding:"required"`
+	EndTime      time.Time `json:"endTime" binding:"required"`
+}
+
+// UpdateTimeRecordRequest represents the request body for updating a time record
+type UpdateTimeRecordRequest struct {
+	ID           uuid.UUID `json:"ID" binding:"required"`
+	ProjectID    uuid.UUID `json:"projectID" binding:"required"`
+	TaskID       uuid.UUID `json:"taskID" binding:"required"`
+	WorkDate     time.Time `json:"workDate" binding:"required"`
+	WorkTimezone string    `json:"workTimezone" binding:"required"`
+	StartTime    time.Time `json:"startTime" binding:"required"`
+	EndTime      time.Time `json:"endTime" binding:"required"`
+}

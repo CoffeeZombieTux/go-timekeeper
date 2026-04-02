@@ -1,0 +1,1498 @@
+{
+  "info": {
+    "_postman_id": "7de9e882-a378-4d34-8d6d-51fd37c943ca",
+    "name": "GoTimekeeper Flow",
+    "description": "Registers a user, creates 3 projects and 3 tasks, starts and stops each task with a configurable wait, then fetches general, project, and task reports.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const getValue = (key) => pm.variables.get(key);",
+          "const setEnv = (key, value) => postman.setEnvironmentVariable(key, value);",
+          "const setDefault = (key, value) => {",
+          "  if (!getValue(key)) {",
+          "    setEnv(key, value);",
+          "  }",
+          "};",
+          "const suffix = getValue('runSuffix') || String(Date.now());",
+          "if (!pm.environment.get('runSuffix')) setEnv('runSuffix', suffix);",
+          "",
+          "setDefault('baseUrl', 'http://localhost:8080');",
+          "setDefault('timezone', 'Europe/Prague');",
+          "setDefault('waitMs', '65000');",
+          "setDefault('userPassword', 'User1@password');",
+          "setDefault('userEmail', `postman_${suffix}@example.com`);",
+          "",
+          "setDefault('project1Name', `Project 1 ${suffix}`);",
+          "setDefault('project2Name', `Project 2 ${suffix}`);",
+          "setDefault('project3Name', `Project 3 ${suffix}`);",
+          "setDefault('task1Name', `Task 1 ${suffix}`);",
+          "setDefault('task2Name', `Task 2 ${suffix}`);",
+          "setDefault('task3Name', `Task 3 ${suffix}`);",
+          "",
+          "if (!getValue('reportFromDate')) {",
+          "  const now = new Date();",
+          "  const from = new Date(now);",
+          "  from.setDate(now.getDate() - 1);",
+          "  from.setHours(0, 0, 0, 0);",
+          "  const value = from.toISOString();",
+          "  setEnv('reportFromDate', value);",
+          "}",
+          "",
+          "if (!getValue('reportToDate')) {",
+          "  const to = new Date();",
+          "  to.setDate(to.getDate() + 1);",
+          "  to.setHours(23, 59, 59, 999);",
+          "  const value = to.toISOString();",
+          "  setEnv('reportToDate', value);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "timezone",
+      "value": "Europe/Prague"
+    },
+    {
+      "key": "waitMs",
+      "value": "65000"
+    },
+    {
+      "key": "userPassword",
+      "value": "User1@password"
+    },
+    {
+      "key": "userEmail",
+      "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "project1Name",
+      "value": ""
+    },
+    {
+      "key": "project1Id",
+      "value": ""
+    },
+    {
+      "key": "project2Name",
+      "value": ""
+    },
+    {
+      "key": "project2Id",
+      "value": ""
+    },
+    {
+      "key": "project3Name",
+      "value": ""
+    },
+    {
+      "key": "project3Id",
+      "value": ""
+    },
+    {
+      "key": "task1Name",
+      "value": ""
+    },
+    {
+      "key": "task1Id",
+      "value": ""
+    },
+    {
+      "key": "task2Name",
+      "value": ""
+    },
+    {
+      "key": "task2Id",
+      "value": ""
+    },
+    {
+      "key": "task3Name",
+      "value": ""
+    },
+    {
+      "key": "task3Id",
+      "value": ""
+    },
+    {
+      "key": "timeRecordId",
+      "value": ""
+    },
+    {
+      "key": "reportFromDate",
+      "value": ""
+    },
+    {
+      "key": "reportToDate",
+      "value": ""
+    },
+    {
+      "key": "runSuffix",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Register User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('register succeeded', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.accessToken).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('accessToken', responseData.accessToken);",
+              "postman.setEnvironmentVariable('refreshToken', responseData.refreshToken);",
+              "postman.setEnvironmentVariable('userId', responseData.user.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      }
+    },
+    {
+      "name": "02 Create Project 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('project 1 created', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('project1Id', responseData.id);",
+              "postman.setEnvironmentVariable('project1Name', responseData.name);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{project1Name}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/project",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "project"
+          ]
+        }
+      }
+    },
+    {
+      "name": "03 Create Project 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('project 2 created', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('project2Id', responseData.id);",
+              "postman.setEnvironmentVariable('project2Name', responseData.name);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{project2Name}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/project",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "project"
+          ]
+        }
+      }
+    },
+    {
+      "name": "04 Create Project 3",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('project 3 created', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('project3Id', responseData.id);",
+              "postman.setEnvironmentVariable('project3Name', responseData.name);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{project3Name}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/project",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "project"
+          ]
+        }
+      }
+    },
+    {
+      "name": "05 Create Task 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 1 created', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('task1Id', responseData.id);",
+              "postman.setEnvironmentVariable('task1Name', responseData.name);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{task1Name}}\",\n  \"projectID\": \"{{project1Id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/task",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task"
+          ]
+        }
+      }
+    },
+    {
+      "name": "06 Create Task 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 2 created', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('task2Id', responseData.id);",
+              "postman.setEnvironmentVariable('task2Name', responseData.name);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{task2Name}}\",\n  \"projectID\": \"{{project2Id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/task",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task"
+          ]
+        }
+      }
+    },
+    {
+      "name": "07 Create Task 3",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 3 created', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('task3Id', responseData.id);",
+              "postman.setEnvironmentVariable('task3Name', responseData.name);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{task3Name}}\",\n  \"projectID\": \"{{project3Id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/task",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task"
+          ]
+        }
+      }
+    },
+    {
+      "name": "08 Start Task 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 1 started', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Timezone",
+            "value": "{{timezone}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/{{task1Id}}/start",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "{{task1Id}}",
+            "start"
+          ]
+        }
+      }
+    },
+    {
+      "name": "09 Wait Before Stop 1",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "setTimeout(function(){}, Number(pm.environment.get('waitMs') || '0'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('wait request succeeded', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/project/list",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "project",
+            "list"
+          ]
+        }
+      }
+    },
+    {
+      "name": "10 Stop Task 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 1 stopped', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/{{task1Id}}/stop",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "{{task1Id}}",
+            "stop"
+          ]
+        }
+      }
+    },
+    {
+      "name": "11 Start Task 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 2 started', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Timezone",
+            "value": "{{timezone}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/{{task2Id}}/start",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "{{task2Id}}",
+            "start"
+          ]
+        }
+      }
+    },
+    {
+      "name": "12 Wait Before Stop 2",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "setTimeout(function(){}, Number(pm.environment.get('waitMs') || '0'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('wait request succeeded', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/project/list",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "project",
+            "list"
+          ]
+        }
+      }
+    },
+    {
+      "name": "13 Stop Task 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 2 stopped', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/{{task2Id}}/stop",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "{{task2Id}}",
+            "stop"
+          ]
+        }
+      }
+    },
+    {
+      "name": "14 Start Task 3",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 3 started', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Timezone",
+            "value": "{{timezone}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/{{task3Id}}/start",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "{{task3Id}}",
+            "start"
+          ]
+        }
+      }
+    },
+    {
+      "name": "15 Wait Before Stop 3",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "setTimeout(function(){}, Number(pm.environment.get('waitMs') || '0'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('wait request succeeded', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/project/list",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "project",
+            "list"
+          ]
+        }
+      }
+    },
+    {
+      "name": "16 Stop Task 3",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task 3 stopped', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/{{task3Id}}/stop",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "{{task3Id}}",
+            "stop"
+          ]
+        }
+      }
+    },
+    {
+      "name": "17 General Report",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('general report generated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.projects).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projects\": [\"{{project1Id}}\", \"{{project2Id}}\", \"{{project3Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/report/general",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "report",
+            "general"
+          ]
+        }
+      }
+    },
+    {
+      "name": "18 Project Report 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('project report 1 generated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.projectId).to.eql(pm.environment.get('project1Id'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectID\": \"{{project1Id}}\",\n  \"tasks\": [\"{{task1Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/report/project",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "report",
+            "project"
+          ]
+        }
+      }
+    },
+    {
+      "name": "19 Project Report 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('project report 2 generated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.projectId).to.eql(pm.environment.get('project2Id'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectID\": \"{{project2Id}}\",\n  \"tasks\": [\"{{task2Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/report/project",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "report",
+            "project"
+          ]
+        }
+      }
+    },
+    {
+      "name": "20 Project Report 3",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('project report 3 generated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.projectId).to.eql(pm.environment.get('project3Id'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectID\": \"{{project3Id}}\",\n  \"tasks\": [\"{{task3Id}}\"],\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/report/project",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "report",
+            "project"
+          ]
+        }
+      }
+    },
+    {
+      "name": "21 Task Report 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task report 1 generated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.taskId).to.eql(pm.environment.get('task1Id'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"taskID\": \"{{task1Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/report/task",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "report",
+            "task"
+          ]
+        }
+      }
+    },
+    {
+      "name": "22 Task Report 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task report 2 generated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.taskId).to.eql(pm.environment.get('task2Id'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"taskID\": \"{{task2Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/report/task",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "report",
+            "task"
+          ]
+        }
+      }
+    },
+    {
+      "name": "23 Task Report 3",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task report 3 generated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.taskId).to.eql(pm.environment.get('task3Id'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"taskID\": \"{{task3Id}}\",\n  \"timeRange\": {\n    \"fromDate\": \"{{reportFromDate}}\",\n    \"toDate\": \"{{reportToDate}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/report/task",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "report",
+            "task"
+          ]
+        }
+      }
+    },
+    {
+      "name": "24 Create Time Record",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('time record created', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "});",
+              "const responseData = pm.response.json().data;",
+              "postman.setEnvironmentVariable('timeRecordId', responseData.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectID\": \"{{project1Id}}\",\n  \"taskID\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:00:00+01:00\",\n  \"endTime\": \"2026-03-31T10:00:00+01:00\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/task/session",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "session"
+          ]
+        }
+      }
+    },
+    {
+      "name": "25 Update Time Record",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('time record updated', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ID\": \"{{timeRecordId}}\",\n  \"projectID\": \"{{project1Id}}\",\n  \"taskID\": \"{{task1Id}}\",\n  \"workDate\": \"2026-03-31T00:00:00Z\",\n  \"workTimezone\": \"{{timezone}}\",\n  \"startTime\": \"2026-03-31T09:15:00+01:00\",\n  \"endTime\": \"2026-03-31T10:15:00+01:00\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/task/session",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "session"
+          ]
+        }
+      }
+    },
+    {
+      "name": "26 Delete Time Record",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('time record deleted', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "postman.setEnvironmentVariable('timeRecordId', '');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/session/{{timeRecordId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "task",
+            "session",
+            "{{timeRecordId}}"
+          ]
+        }
+      }
+    }
+  ]
+}

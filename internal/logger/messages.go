@@ -28,4 +28,7 @@ const (
 	LogMessageFailedToStopTask                = "failed_to_stop_task"
 	LogMessageFailedToCloseTask               = "failed_to_close_task"
 	LogMessageFailedToGetReport               = "failed_to_get_report"
+	LogMessageFailedToCreateTimeRecord        = "failed_to_create_time_record"
+	LogMessageFailedToUpdateTimeRecord        = "failed_to_update_time_record"
+	LogMessageFailedToDeleteTimeRecord        = "failed_to_delete_time_record"
 )

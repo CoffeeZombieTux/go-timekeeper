@@ -32,4 +32,5 @@ func SetupRoutes(
 	setupProjectRoutes(engine, handlersPool, tokenManager)
 	setupTaskRoutes(engine, handlersPool, tokenManager)
 	setupReportRoutes(engine, handlersPool, tokenManager)
+	setupTimeRecordRoutes(engine, handlersPool, tokenManager)
 }

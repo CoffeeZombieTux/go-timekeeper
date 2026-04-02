@@ -1,0 +1,37 @@
+### Create time record
+POST {{host}}/api/task/session
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "projectID": "{{user_project1_id}}",
+  "taskID": "{{user_task1_id}}",
+  "workDate": "2026-03-31T00:00:00Z",
+  "workTimezone": "Europe/Prague",
+  "startTime": "2026-03-31T09:00:00+01:00",
+  "endTime": "2026-03-31T10:00:00+01:00"
+}
+
+> {%
+    client.global.set("user_time_record_id", response.body.data.id);
+%}
+
+### Update time record
+PATCH {{host}}/api/task/session
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
+
+{
+  "ID": "{{user_time_record_id}}",
+  "projectID": "{{user_project1_id}}",
+  "taskID": "{{user_task1_id}}",
+  "workDate": "2026-03-31T00:00:00Z",
+  "workTimezone": "Europe/Prague",
+  "startTime": "2026-03-31T09:15:00+01:00",
+  "endTime": "2026-03-31T10:15:00+01:00"
+}
+
+### Delete time record
+DELETE {{host}}/api/task/session/{{user_time_record_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_access_token}}
